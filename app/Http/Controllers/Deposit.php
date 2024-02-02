@@ -58,40 +58,40 @@ class Deposit extends Controller
 
                 if ($application->save()) {
                     //after the admin approves the deposit data let add the deposited amount to the user balance
-                            $interestRate = 7.5;
-                            $interest = AccruedInterests::CalculateInterest(floatval($request->paymentAmount), $interestRate);
-                            $subTotalAmount = AccruedInterests::CalculateSubTotal(floatval($request->paymentAmount), $interest);
-                            //compute total cumulative savings
-                            AccruedInterests::TotalAccumulation($request->paymentAmount);
-                            $computeBenefits = new AccruedBenefits([
-                                'employee_code' => $request->employee_code,
-                                'Principal_amount' => $request->paymentAmount,
-                                'interest_rate' => $interestRate,
-                                'interest_amount' => $interest,
-                                'sub_total_amount' => $subTotalAmount,
-                            ]);
-                             $computeBenefits->save();
-                            //search if a user has a total accrued benefit information if not create else update existing data
-                            $searchEmployeeCode = TotalAccruedBenefits::where('employee_code',$request->employee_code)->first();    
-                            if ($searchEmployeeCode) {
-                                $searchEmployeeCode->total_accrued_benefits_amount = $searchEmployeeCode->total_accrued_benefits_amount + $computeBenefits->sub_total_amount;
-                                $searchEmployeeCode->save();
-                            } else {
-                                TotalAccruedBenefits::create([
-                                    'employee_code' => $computeBenefits->employee_code,
-                                    'total_accrued_benefits_amount' => $subTotalAmount
-                                ]);
-                            
-        
-                        }
-                        return response()->json([
-                            'status' => true,
-                            'message' => 'You have finally approved user deposits'
-                        ], 201);
+                    // $interestRate = 7.5;
+                    // $interest = AccruedInterests::CalculateInterest(floatval($request->paymentAmount), $interestRate);
+                    //  $subTotalAmount = AccruedInterests::CalculateSubTotal(floatval($request->paymentAmount), $interest);
+                    //compute total cumulative savings
+                    //add the paid amount to our total contributions
+                    AccruedInterests::TotalAccumulation($request->paymentAmount);
 
+                    //let record accrued benefits for the deposit transaction
+                    $computeBenefits = new AccruedBenefits([
+                        'employee_code' => $request->employee_code,
+                        'Principal_amount' => $request->paymentAmount,
+                        // 'interest_rate' => $interestRate,
+                        //  'interest_amount' => $interest,
+                        //  'sub_total_amount' => $subTotalAmount,
+                    ]);
+                    $computeBenefits->save();
+                    //search if a user has a total accrued benefit information if not create else update existing data
+                    //we update the employee balance 
+                    $searchEmployeeCode = TotalAccruedBenefits::where('employee_code', $request->employee_code)->first();
+                    if ($searchEmployeeCode) {
+                        $searchEmployeeCode->total_accrued_benefits_amount += $computeBenefits->Principal_amount;
+                        $searchEmployeeCode->save();
+                    } else {
+                        TotalAccruedBenefits::create([
+                            'employee_code' => $computeBenefits->employee_code,
+                            'total_accrued_benefits_amount' => $computeBenefits->Principal_amount
+                        ]);
+                    }
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'You have finally approved user deposits'
+                    ], 201);
+                }
             }
-        }
-        
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
@@ -179,9 +179,6 @@ class Deposit extends Controller
                     'status' => true,
                     'message' => 'You have successfully made deposits wait for final approval'
                 ], 201);
-
-
-
             }
         } catch (\Throwable $th) {
             return response()->json([
@@ -205,9 +202,6 @@ class Deposit extends Controller
                 'status' => false,
                 'message' => $error->getMessage()
             ], 500);
-
         }
-
     }
-   
 }

@@ -23,24 +23,37 @@ class AccruedInterests
      *
      */
 
-    // public static function CalculateInterest($principalAmount, $interestRate)
-    // {
-    //     return $principalAmount * $interestRate / 100;
-    // }
-
     public static function CalculateInterest($interestFromloans, $individualSavings, $totalContributions)
     {
-        return (($interestFromloans / $totalContributions) * $individualSavings);
+        if($interestFromloans !==0 && $individualSavings !==0 && $totalContributions !==0){
+            return (($interestFromloans / $totalContributions) * $individualSavings);
+        }
+        else {
+            return 0;
+        }
+
     }
 
     public static function UserTotalAccruedBenefits($interestAmount, $totalContributions)
     {
-        return ($interestAmount + $totalContributions);
+        if($interestAmount !==0 || $totalContributions!==0){
+            return ($interestAmount + $totalContributions);
+        }
+        else {
+            return 0;
+        }
+
     }
 
     public static function CalculateSubTotal($principalAmount, $interestAmount)
     {
-        return $principalAmount + $interestAmount;
+        if($principalAmount !=0 || $interestAmount !=0){
+            return $principalAmount + $interestAmount;
+        }
+        else {
+            return 0;
+        }
+
     }
 
     public static function InterestShared($loans_from_profit, $total_cumulative_savings)

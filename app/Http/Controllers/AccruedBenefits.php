@@ -45,7 +45,9 @@ class AccruedBenefits extends Controller
                     [
                         'status' => false,
                         'data' => 'Sorry your employee code does not exist',
-                    ], 200);
+                    ],
+                    200
+                );
             } else {
 
                 //make further computations the interest shared and the interest capitalised by the employee
@@ -58,16 +60,12 @@ class AccruedBenefits extends Controller
                     'message' => 'Successful'
                 ], 200);
             }
-
         } catch (\Exception $error) {
             return response()->json([
                 'status' => false,
                 'error' => $error->getMessage()
             ]);
         }
-
-
-
     }
 
 
@@ -75,56 +73,36 @@ class AccruedBenefits extends Controller
 
     public function CalculateUserAccruedBenefit(Request $request)
     {
-         //get current total loans from profit within the specific month
-         $formatCurrentDate = RecordTransactions::FormatDate();
-        $TotalProfitLoans = TotalLoansProfit::whereYear('created_at', '=', $formatCurrentDate[0])
-            ->whereMonth('created_at', '=', $formatCurrentDate[1])->first();
 
-        $loansProfit =  floatval($TotalProfitLoans->total_loans_profit);
-
-        //get total individual savings
-        $total_individual_savings = TotalAccruedBenefits::where('employee_code',$request->user()->employee_code)->get();
-        $individual_savings = floatval($total_individual_savings->total_accrued_benefits_amount);
-
-        //total_contributions
-        $all_total_contributions = TotalCumulativeSavings::where('id',1)->get();
-        $total_contributions = $all_total_contributions->total_cumulative_savings;
-
-        $calculate_interests = AccruedInterests::CalculateInterest($loansProfit,$individual_savings,$total_contributions);
-        return $calculate_interests;
-        
-        $employee_code = trim($request->employee_code);
         try {
-            $benefits = TotalAccruedBenefits::where('employee_code', $employee_code)->first();
-
-            if (!$benefits) {
-                return response()->json(
-                    [
-                        'status' => false,
-                        'data' => 'Sorry your employee code does not exist',
-                    ], 200);
-            } else {
-
-                //make further computations the interest shared and the interest capitalised by the employee
-                //$interestShared = AccruedInterests::InterestShared()
-
-
-                return response()->json([
-                    'status' => true,
-                    'data' => $benefits,
-                    'message' => 'Successful'
-                ], 200);
-            }
-
+            //get current total loans from profit within the specific month
+            $formatCurrentDate = RecordTransactions::FormatDate();
+            $TotalProfitLoans = TotalLoansProfit::whereYear('created_at', '=', $formatCurrentDate[0])
+                ->whereMonth('created_at', '=', $formatCurrentDate[1])->first();
+            $loansProfit =  $TotalProfitLoans === null ? 0 :  floatval($TotalProfitLoans->total_loans_profit);
+            //get total individual savings
+            $total_individual_savings = TotalAccruedBenefits::where('employee_code', $request->user()->employee_code)->first();
+            $individual_savings = $total_individual_savings == null ? 0 : floatval($total_individual_savings->total_accrued_benefits_amount);
+            //total_contributions
+            $all_total_contributions = TotalCumulativeSavings::where('id', 1)->first();
+            $total_contributions =  $all_total_contributions == null ? 0 : floatval($all_total_contributions->total_cumulative_savings);
+            //interest calculated
+            $calculate_interests = AccruedInterests::CalculateInterest($loansProfit, $individual_savings, $total_contributions);
+            //return $calculate_interests;
+            //total accrued benefits = interests + total individual savings
+            $total_accrued_benefits = $calculate_interests + $individual_savings;
+            //return $total_accrued_benefits;
+            return response()->json([
+                'status' => true,
+                'data' => round($total_accrued_benefits,2),
+                'message' => 'Successful'
+            ], 200);
         } catch (\Exception $error) {
             return response()->json([
                 'status' => false,
                 'error' => $error->getMessage()
             ]);
         }
-
-
-
     }
 
 
@@ -175,7 +153,6 @@ class AccruedBenefits extends Controller
                     'status' => false,
                     'message' => 'Sorry you already have an outstanding request to withdraw your accrued benefits. Wait for the process to be completed'
                 ], 422);
-
             }
 
 
@@ -194,8 +171,6 @@ class AccruedBenefits extends Controller
                     'status' => true,
                     'message' => 'You have successfully requested to withdraw your accrued benefits'
                 ], 201);
-
-
             }
         } catch (\Throwable $th) {
             return response()->json([
@@ -220,9 +195,7 @@ class AccruedBenefits extends Controller
                 'status' => false,
                 'message' => $error->getMessage()
             ], 500);
-
         }
-
     }
 
 
@@ -271,7 +244,7 @@ class AccruedBenefits extends Controller
                     $updateTotalBalance->total_accrued_benefits_amount = $updateTotalBalance->total_accrued_benefits_amount - $request->amount_to_withdraw;
                     if ($updateTotalBalance->save()) {
                         //let update the total balance after balance has been withdrawn
-                        AccruedInterests::TotalAccumulation(-($request->amount_to_withdraw));
+                        AccruedInterests::TotalAccumulation(- ($request->amount_to_withdraw));
                         return response()->json([
                             'status' => true,
                             'message' => 'You have successfully closed this request'

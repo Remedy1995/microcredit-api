@@ -27,7 +27,6 @@ class AllApprovedUnsettledLoans extends Controller
             });
             if ($applications) {
                 //filter applications which have loan settlement status as not completed
-
                 $filterApplications  = $applications->filter(function ($query) {
                     return $query->schoolfeesloan->loan_settlement_status !== 'COMPLETED';
                 });

@@ -70,15 +70,26 @@ class MonthlyContributions extends Controller
                 ], 405);
             }
 
+            $data = $data[0]->toArray();
+
+            // Remove rows with all null values and where "monthly_amount_contribution" is not an integer
+            $excelData = RecordTransactions::FormatExcelData($data);
+            $convertData = json_decode($excelData, true);
+            //return ($convertData);
             $myArray = [];
-            foreach ($data[0] as $row) {
+            foreach ($convertData as $row) {
+                //return $data;
                 $employeeCode = $row['employee_code'] ?? null;
                 $employeeAmount = $row['monthly_amount_contribution'] ?? null;
+
                 array_push($myArray, $employeeAmount);
                 //let compute total contributions received
+
                 $total_contributions = array_reduce($myArray, function ($mycarry, $item) {
                     return $mycarry + $item;
                 }, 0);
+
+                //return $employeeCode;
                 if (!$employeeCode || !$employeeAmount) {
                     return response()->json([
                         'status' => false,
@@ -96,12 +107,12 @@ class MonthlyContributions extends Controller
 
                 //after monthly contributions has been uploaded
                 //let record principal amount and employee code for each employee
-                foreach ($data[0] as $row) {
+                foreach ($convertData as $row) {
                     $employee_code = $row['employee_code'] ?? null;
                     $employeeAmount = floatval($row['monthly_amount_contribution']);
                     //$interestRate = 7.5;
                     //
-                     //$interest = AccruedInterests::CalculateInterest($employeeAmount,$interestRate);
+                    //$interest = AccruedInterests::CalculateInterest($employeeAmount,$interestRate);
                     //$subTotalAmount = AccruedInterests::CalculateSubTotal($employeeAmount, $interest);
                     $computeBenefits = new AccruedBenefits([
                         'employee_code' => $employee_code,
@@ -132,6 +143,12 @@ class MonthlyContributions extends Controller
                     'message' => 'Monthly Contributions for this month has been successfully uploaded'
                 ], 201);
             }
+
+
+            // Assume $excelResponse contains the provided Excel response
+
+            // Access the first array within the response
+
         } catch (\Exception $error) {
             return response()->json([
                 'status' => false,
@@ -143,7 +160,7 @@ class MonthlyContributions extends Controller
 
     public function viewAllContribution(Request $request)
     {
-        $contributions = \App\Models\MonthlyContributions::all();
+        $contributions = \App\Models\MonthlyContributions::orderBy('created_at', 'desc')->get();
         return response()->json($contributions, 200);
     }
 

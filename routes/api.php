@@ -14,6 +14,7 @@ use App\Http\Controllers\EasterLoans;
 use App\Http\Controllers\FoundersDayLoan;
 use App\Http\Controllers\HappyBirthdayLoan;
 use App\Http\Controllers\LoanController;
+use App\Http\Controllers\LoanRepayment;
 use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\MonthlyContributions;
 use App\Http\Controllers\PostNews;
@@ -49,6 +50,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/all-pending-applications', [AllApplications::class, 'AllPendingApprovals'])->middleware('auth:sanctum');
     Route::get('/all-approved-applications', [AllApplications::class, 'AllApplicationApprovals'])->middleware('auth:sanctum');
     Route::post('/monthly-contributions', [MonthlyContributions::class, 'monthlyContributions'])->middleware('auth:sanctum');
+    Route::post('/loan-repayments', [LoanRepayment::class,'LoanRepayments'])->middleware('auth:sanctum');
+    Route::get('/loan-repayments', [LoanRepayment::class,'viewAllLoanRepayment'])->middleware('auth:sanctum');
+    Route::get('/user-loan-repayments', [LoanRepayment::class,'getUserLoanMonthlyRepayments'])->middleware('auth:sanctum');
     Route::get('/user-application-history', [AllApplications::class, 'userApplicationHistory'])->middleware('auth:sanctum');
     Route::get('/all-contributions', [MonthlyContributions::class, 'viewAllContribution'])->middleware('auth:sanctum');
     Route::post('/get-user-accrued-benefits', [AccruedBenefits::class, 'getUserAccruedBenefits'])->middleware('auth:sanctum');

@@ -17,11 +17,8 @@ class SchoolFeesLoan extends Controller
     //
     public function show(Request $request)
     {
-
         $schoolfees_id = $request->route('school_fees_loan');
-
         $application = \App\Models\SchoolFeesLoan::with('earlySettlement')->where('id', $schoolfees_id)->first();
-
         if (!$application) {
             return response()->json([
                 'status' => false,
@@ -38,8 +35,6 @@ class SchoolFeesLoan extends Controller
 
     public function store(Request $request)
     {
-
-
         try {
             $schoolFeesData = Validator::make(
                 $request->all(),

@@ -38,7 +38,7 @@ class RecordTransactions
         foreach ($checkMonths as $months) {
             $parseMonth = Carbon::parse($months->created_at)->month;
             $parseYear = Carbon::parse($months->created_at)->year;
-           $finalMonth = strlen($parseMonth < 2) ? '0' .$parseMonth : $parseMonth;
+            $finalMonth = strlen($parseMonth < 2) ? '0' . $parseMonth : $parseMonth;
             $allPaidDates[] = $finalMonth . '-' . $parseYear;
         }
         $checkPaidDates = in_array($joinCurrentMonthYear, $allPaidDates);
@@ -78,7 +78,8 @@ class RecordTransactions
         }
     }
 
-     public static function FormatDate(){
+    public static function FormatDate()
+    {
         //this function returns an array of date in the format month/year eg 2020-10
         $currentDate = Carbon::now()->toDateString();
         $splitCurrentMonth = explode("-", $currentDate)[1];
@@ -87,10 +88,72 @@ class RecordTransactions
         $currentMonthYear[] = $splitCurrentYear;
         $currentMonthYear[] = $splitCurrentMonth;
         //simulate monthYear
-        //  $currentMonthYear[0]='2024';
-        //  $currentMonthYear[1]='2';
+        $currentMonthYear[0] = '2024';
+        $currentMonthYear[1] = '1';
         return $currentMonthYear;
         //return an array containing the year as the first item and month as second item
-     }
+    }
 
+
+    public  static function FormatExcelData($data)
+    {
+        $data = array_filter($data, function ($row) {
+            return !empty(array_filter($row, function ($cell) {
+                return !is_null($cell) && is_numeric($cell);
+            }));
+        });
+
+        // Check if the last row contains a null value
+        $lastRow = end($data);
+
+        if (in_array('Total :', $lastRow)) {
+            // Remove the last row if it contains a null value
+            array_pop($data);
+        }
+
+        // Extract columns "employee_code" and "monthly_amount_contribution"
+        $processedData = array_map(function ($row) {
+            return [
+                'employee_code' => $row[0],
+                'monthly_amount_contribution' => $row[2]
+            ];
+        }, $data);
+        // Remove the first row (headers)
+       // $headers = array_shift($processedData);
+        // Output the processed data
+        return json_encode($processedData, JSON_PRETTY_PRINT);
+    }
+
+
+
+
+    public  static function FormatExcelLoanData($data)
+    {
+        $data = array_filter($data, function ($row) {
+            return !empty(array_filter($row, function ($cell) {
+                return !is_null($cell) && is_numeric($cell);
+            }));
+        });
+
+        // Check if the last row contains a null value
+        $lastRow = end($data);
+
+        if (in_array('Total :', $lastRow)) {
+            // Remove the last row if it contains a null value
+            array_pop($data);
+        }
+
+        // Extract columns "employee_code" and "monthly_amount_contribution"
+        $processedData = array_map(function ($row) {
+            return [
+                'employee_code' => $row[0],
+                'Principal_amount'=>$row[1],
+                'monthly_repayment_amount' => $row[2],
+            ];
+        }, $data);
+        // Remove the first row (headers)
+       // $headers = array_shift($processedData);
+        // Output the processed data
+        return json_encode($processedData, JSON_PRETTY_PRINT);
+    }
 }
