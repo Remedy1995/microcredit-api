@@ -113,5 +113,11 @@ class ApplicationTypeSeeder extends Seeder
              'application_type_slug'=>'EASTER_APPLICATION_FORM',
              'application_category'=>'EASTER LOAN'
         ]);
+
+        DB::table('application_types')->insert(
+            ['application_type_name'=>'EMERGENCY LOANS',
+             'application_type_slug'=>'EMERGENCY_APPLICATION_FORM',
+             'application_category'=>'EMERGENCY LOAN'
+        ]);
     }
 }

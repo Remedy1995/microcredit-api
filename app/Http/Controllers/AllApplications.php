@@ -45,12 +45,16 @@ class AllApplications extends Controller
                 'easterloan' => function ($query) {
                     $query->where('loan_settlement_status', 'IN-PROGRESS');
                 },
+                'emergencyloan' => function ($query) {
+                    $query->where('loan_settlement_status', 'IN-PROGRESS');
+                },
 
-            ])->get();
+            ])->orderBy('created_at', 'desc')->get();
 
             $filteredApplications = $applications->filter(function ($application) {
                 return $application->schoolfeesloan || $application->happybirthdayloan || $application->loanapplication
-                    || $application->carloan || $application->christmasloan || $application->foundersdayloan || $application->easterloan;
+                    || $application->carloan || $application->christmasloan || $application->foundersdayloan ||
+                    $application->easterloan || $application->emergencyloan;
             });
 
             $data = $filteredApplications->map(function ($application) {
@@ -65,6 +69,7 @@ class AllApplications extends Controller
                     'loan_detail_id' => optional($application->loanapplication)->id,
                     'school_fees_detail_id' => optional($application->schoolfeesloan)->id,
                     'car_detail_id' => optional($application->carloan)->id,
+                    'emergency_detail_id' => optional($application->emergencyloan)->id,
                     'user' => $application->user,
                     'schoolfeesloan' => $application->schoolfeesloan,
                     'happybirthdayloan' => $application->happybirthdayloan,
@@ -72,7 +77,8 @@ class AllApplications extends Controller
                     'carloan' => $application->carloan,
                     'christmasloan' => $application->christmasloan,
                     'easterloan' => $application->easterloan,
-                    'foundersdayloan' => $application->foundersdayloan
+                    'foundersdayloan' => $application->foundersdayloan,
+                    'emergencyloan'=>$application->emergencyloan
                 ];
             });
 
@@ -114,11 +120,15 @@ class AllApplications extends Controller
                 },
                 'easterloan' => function ($query) {
                     $query->where('application_status', 'IN-PROGRESS');
+                },
+                'emergencyloan' => function ($query) {
+                    $query->where('application_status', 'IN-PROGRESS');
                 }
-            ])->get();
+            ])->orderBy('created_at', 'desc')->get();
             $filteredApplications = $applications->filter(function ($application) {
                 return $application->schoolfeesloan || $application->happybirthdayloan || $application->loanapplication || $application->carloan
-                    || $application->foundersdayloan || $application->christmasloan || $application->easterloan;
+                    || $application->foundersdayloan || $application->christmasloan
+                     || $application->easterloan || $application->emergencyloan;
             });
 
             $data = $filteredApplications->map(function ($application) {
@@ -131,6 +141,7 @@ class AllApplications extends Controller
                     'christmas_detail_id' => optional($application->christmasloan)->id,
                     'founders_day_detail_id' => optional($application->foundersdayloan)->id,
                     'easter_detail_id' => optional($application->easterloan)->id,
+                     'emergency_detail_id'=>optional($application->emergencyloan)->id,
                     'user' => $application->user,
                     'schoolfeesloan' => $application->schoolfeesloan,
                     'happybirthdayloan' => $application->happybirthdayloan,
@@ -138,7 +149,8 @@ class AllApplications extends Controller
                     'carloan' => $application->carloan,
                     'foundersdayloan' => $application->foundersdayloan,
                     'christmasloan' => $application->christmasloan,
-                    'easterloan' => $application->easterloan
+                    'easterloan' => $application->easterloan,
+                    'emergencyloan'=>$application->emergencyloan
                 ];
             });
 
@@ -180,12 +192,16 @@ class AllApplications extends Controller
                 },
                 'easterloan' => function ($query) {
                     $query->where('approval_status', "COMPLETED");
+                },
+                'emergencyloan' => function ($query) {
+                    $query->where('approval_status', "COMPLETED");
                 }
-            ])->get();
+            ])->orderBy('created_at','desc')->get();
             foreach ($applications as $key => $application) {
                 if (
                     $application->schoolfeesloan == null && $application->happybirthdayloan == null && $application->loanapplication == null
-                    &&  $application->carloan == null && $application->foundersdayloan == null && $application->christmasloan == null && $application->easterloan
+                    &&  $application->carloan == null && $application->foundersdayloan == null && $application->christmasloan == null
+                     && $application->easterloan && $application->emergencyloan
                 ) {
                     unset($applications[$key]);
                 }
@@ -208,7 +224,7 @@ class AllApplications extends Controller
     public function userApplicationHistory(Request $request)
     {
         try {
-            $userapplications = ApplicationDetails::where(['user_id' => $request->user()->id])->with(['user', 'happybirthdayloan', 'schoolfeesloan', 'loanapplication', 'carloan', 'foundersdayloan', 'christmasloan', 'easterloan'])->orderBy('created_at', 'desc')->get();
+            $userapplications = ApplicationDetails::where(['user_id' => $request->user()->id])->with(['user', 'happybirthdayloan', 'schoolfeesloan', 'loanapplication', 'carloan', 'foundersdayloan', 'christmasloan', 'easterloan','emergencyloan'])->orderBy('created_at', 'desc')->get();
             return response()->json($userapplications, 200);
         } catch (\Exception $error) {
             return response()->json([

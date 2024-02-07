@@ -19,7 +19,10 @@ class LoanController extends Controller
         $loanapplication_id = $request->route('loan');
 
         $application = LoanApplication::with('earlySettlement')->where('id', $loanapplication_id)->first();
-
+        $application = \App\Models\EarlySettlement::select('early_settlement_form.*', 'loan_application.*')
+        ->join('loan_application', 'loan_application.id', '=', 'early_settlement_form.loan_detail_id')
+        ->where('loan_application.id', $loanapplication_id)
+        ->get();
         if (!$application) {
             return response()->json([
                 'status' => false,

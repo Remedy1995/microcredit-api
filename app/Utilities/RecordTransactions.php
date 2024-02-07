@@ -38,11 +38,10 @@ class RecordTransactions
         foreach ($checkMonths as $months) {
             $parseMonth = Carbon::parse($months->created_at)->month;
             $parseYear = Carbon::parse($months->created_at)->year;
-            $finalMonth = strlen($parseMonth < 2) ? '0' . $parseMonth : $parseMonth;
+            $finalMonth = strlen((string)$parseMonth) < 2 ? '0' . $parseMonth : $parseMonth;
             $allPaidDates[] = $finalMonth . '-' . $parseYear;
         }
         $checkPaidDates = in_array($joinCurrentMonthYear, $allPaidDates);
-
         if ($checkPaidDates) {
             return 0;
         } else {
@@ -115,11 +114,12 @@ class RecordTransactions
         $processedData = array_map(function ($row) {
             return [
                 'employee_code' => $row[0],
+                // 'Principal_amount' => $row[2],
                 'monthly_amount_contribution' => $row[2]
             ];
         }, $data);
         // Remove the first row (headers)
-       // $headers = array_shift($processedData);
+        // $headers = array_shift($processedData);
         // Output the processed data
         return json_encode($processedData, JSON_PRETTY_PRINT);
     }
@@ -147,13 +147,33 @@ class RecordTransactions
         $processedData = array_map(function ($row) {
             return [
                 'employee_code' => $row[0],
-                'Principal_amount'=>$row[1],
+                'Principal_amount' => $row[1],
                 'monthly_repayment_amount' => $row[2],
             ];
         }, $data);
         // Remove the first row (headers)
-       // $headers = array_shift($processedData);
+        // $headers = array_shift($processedData);
         // Output the processed data
         return json_encode($processedData, JSON_PRETTY_PRINT);
+    }
+
+//this function checks if there is a duplicates in the excel sheet data
+    public static function CheckDuplicates($employeeCodeArray,$employeeObject){
+        foreach ($employeeCodeArray as $key => $value) {
+            if (!isset($employeeObject[$value])) {
+                $employeeObject[$value] = 1;
+            } else {
+                $employeeObject[$value]++;
+            }
+        }
+             //now loop thorugh employee object and return the employee who appears more than 1
+             //that is has been assigned 2 or more
+        foreach ($employeeObject as $key => $value) {
+            if ($value > 1) {
+                return $key;
+            }
+        }
+
+        return null;
     }
 }

@@ -5,10 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class EasterLoans extends Model
+class EmergencyLoans extends Model
 {
     use HasFactory;
-    protected $table = 'easter_loans';
+    protected $table = 'emergency_loans';
     protected $fillable = [
         'application_id',
         'application_name',
@@ -32,7 +32,7 @@ class EasterLoans extends Model
 
     public function applicationDetails()
     {
-        return $this->hasMany(ApplicationDetails::class, 'easter_detail_id', 'id');
+        return $this->hasMany(ApplicationDetails::class, 'emergency_detail_id', 'id');
     }
 
     public function applicationTypes()

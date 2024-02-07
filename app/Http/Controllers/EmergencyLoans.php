@@ -7,17 +7,17 @@ use App\Models\EarlySettlement;
 use App\Utilities\AccruedInterests;
 use Illuminate\Support\Facades\Validator;
 
-class FoundersDayLoan extends Controller{
+class EmergencyLoans extends Controller{
 
     public function show(Request $request)
     {
-        $foundersday_id = $request->route('founders_day_loan');
+        $emergency_id = $request->route('emergency_loan');
 
-        $application = \App\Models\EarlySettlement::select('early_settlement_form.*', 'founders_day_loan_application.*')
-        ->join('founders_day_loan_application', 'founders_day_loan_application.id', '=', 'early_settlement_form.founders_day_detail_id')
-        ->where('founders_day_loan_application.id', $foundersday_id)
+        $application = \App\Models\EarlySettlement::select('early_settlement_form.*', 'emergency_loans.*')
+        ->join('emergency_loans', 'emergency_loans.id', '=', 'early_settlement_form.emergency_detail_id')
+        ->where('emergency_loans.id', $emergency_id)
         ->get();
-        //$application = \App\Models\FoundersDayLoan::with('earlySettlement')->where('id',$foundersday_id)->first();
+        //$application = \App\Models\emergencyLoan::with('earlySettlement')->where('id',$emergency_id)->first();
         if (!$application) {
             return response()->json([
                 'status' => false,
@@ -34,7 +34,7 @@ class FoundersDayLoan extends Controller{
     //
     public function index(Request $request)
     {
-        return \App\Models\FoundersDayLoan::all();
+        return \App\Models\EmergencyLoans::all();
     }
 
 
@@ -42,7 +42,7 @@ class FoundersDayLoan extends Controller{
     public function store(Request $request)
     {
         try {
-            $FoundersDayData = Validator::make(
+            $emergencyData = Validator::make(
                 $request->all(),
                 [
                     'principal_amount' => 'required',
@@ -56,19 +56,19 @@ class FoundersDayLoan extends Controller{
                 ]
             );
 
-            if ($FoundersDayData->fails()) {
+            if ($emergencyData->fails()) {
                 return response()->json([
                     'status' => false,
                     'message' => 'validation error',
-                    'errors' => $FoundersDayData->errors()
+                    'errors' => $emergencyData->errors()
                 ], 401);
             }
 
             ///return $request->all();
-            $application = \App\Models\ApplicationTypes::where('application_type_slug', 'FOUNDERS_DAY_APPLICATION_FORM')->first();
-            $foundersDayLoan = \App\Models\FoundersDayLoan::create([
+            $application = \App\Models\ApplicationTypes::where('application_type_slug', 'EMERGENCY_APPLICATION_FORM')->first();
+            $emergencyLoan = \App\Models\EmergencyLoans::create([
                 'application_id' => $application->id,
-                'application_name' => 'FOUNDERS_DAY_APPLICATION_FORM',
+                'application_name' => 'EMERGENCY_APPLICATION_FORM',
                 'principal_amount' => $request->principal_amount,
                 'principal_interest' => $request->principal_interest,
                 'monthly_repayment_amount' => $request->monthly_repayment_amount,
@@ -88,24 +88,24 @@ class FoundersDayLoan extends Controller{
 
 
 
-            if ($foundersDayLoan) {
+            if ($emergencyLoan) {
                 $applicationDetails = ApplicationDetails::create([
                     'user_id' => $request->user()->id,
-                    'founders_day_detail_id' => $foundersDayLoan->id,
+                    'emergency_detail_id' => $emergencyLoan->id,
                 ]);
 
                 if ($applicationDetails) {
                     //create a record for early settlement form
                     $earlySettleLoan = EarlySettlement::create([
                         'user_id' => $request->user()->id,
-                        'founders_day_detail_id' => $foundersDayLoan->id,
-                        'type_of_loan_taken' => 'FOUNDERS_DAY_APPLICATION_FORM'
+                        'emergency_detail_id' => $emergencyLoan->id,
+                        'type_of_loan_taken' => 'EMERGENCY_APPLICATION_FORM'
                     ]);
 
                     if ($earlySettleLoan) {
                         return response()->json([
                             'status' => true,
-                            'message' => 'Founders Day Loan Application has been created successfully'
+                            'message' => 'Emergency Loan Application has been created successfully'
                         ], 201);
                     }
                 }
@@ -124,7 +124,7 @@ class FoundersDayLoan extends Controller{
     public function update(Request $request)
     {
         try {
-            $FoundersDayData = Validator::make(
+            $emergencyData = Validator::make(
                 $request->all(),
                 [
                     'application_status' => 'required',
@@ -132,23 +132,23 @@ class FoundersDayLoan extends Controller{
                 ]
             );
 
-            if ($FoundersDayData->fails()) {
+            if ($emergencyData->fails()) {
                 return response()->json([
                     'status' => false,
                     'message' => 'validation error',
-                    'errors' => $FoundersDayData->errors()
+                    'errors' => $emergencyData->errors()
                 ], 401);
             }
 
 
-            $foundersday_id = $request->route('founders_day_loan');
+            $emergency_id = $request->route('emergency_loan');
             $application_status = $request->application_status;
             $approval_status = $request->approval_status;
             $comment = $request->comment;
             $effective_date_of_payment = $request->effective_date_of_payment;
 
 
-            $application = \App\Models\FoundersDayLoan::where('id',$foundersday_id)->first();
+            $application = \App\Models\EmergencyLoans::where('id',$emergency_id)->first();
 
             if (!$application) {
                 return response()->json([
@@ -168,7 +168,7 @@ class FoundersDayLoan extends Controller{
 
                     return response()->json([
                         'status' => true,
-                        'message' => 'Founders Day Application has been successfully closed'
+                        'message' => 'Emergency Loan Application has been successfully closed'
                     ], 200);
                 }
             }

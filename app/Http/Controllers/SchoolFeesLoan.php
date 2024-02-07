@@ -18,7 +18,11 @@ class SchoolFeesLoan extends Controller
     public function show(Request $request)
     {
         $schoolfees_id = $request->route('school_fees_loan');
-        $application = \App\Models\SchoolFeesLoan::with('earlySettlement')->where('id', $schoolfees_id)->first();
+        // $application = \App\Models\SchoolFeesLoan::with('earlySettlement')->where('id', $schoolfees_id)->first();
+        $application = \App\Models\EarlySettlement::select('early_settlement_form.*', 'school_fees_loan_application.*')
+            ->join('school_fees_loan_application', 'school_fees_loan_application.id', '=', 'early_settlement_form.school_fees_detail_id')
+            ->where('school_fees_loan_application.id', $schoolfees_id)
+            ->get();
         if (!$application) {
             return response()->json([
                 'status' => false,

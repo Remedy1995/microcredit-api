@@ -13,8 +13,11 @@ class EasterLoans extends Controller{
     public function show(Request $request)
     {
         $easterloan_id = $request->route('easter_loan');
-
-        $application = \App\Models\EasterLoans::with('earlySettlement')->where('id',$easterloan_id)->first();
+        $application = \App\Models\EarlySettlement::select('early_settlement_form.*', 'easter_loans.*')
+        ->join('easter_loans', 'easter_loans.id', '=', 'early_settlement_form.easter_detail_id')
+        ->where('easter_loans.id', $easterloan_id)
+        ->get();
+        //$application = \App\Models\EasterLoans::with('earlySettlement')->where('id',$easterloan_id)->first();
         if (!$application) {
             return response()->json([
                 'status' => false,

@@ -17,8 +17,12 @@ class CarLoans extends Controller
 
         $carLoanid = $request->route('car_loan');
 
-        $application = \App\Models\CarLoans::with('earlySettlement')->where('id', $carLoanid)->first();
-        if (!$application) {
+       // $application = \App\Models\CarLoans::with('earlySettlement')->where('id', $carLoanid)->first();
+       $application = \App\Models\EarlySettlement::select('early_settlement_form.*', 'car_loans.*')
+       ->join('car_loans', 'car_loans.id', '=', 'early_settlement_form.car_detail_id')
+       ->where('car_loans.id', $carLoanid)
+       ->get();
+       if (!$application) {
             return response()->json([
                 'status' => false,
                 'data' => [],
@@ -97,7 +101,7 @@ class CarLoans extends Controller
                 ]);
 
                 if ($applicationDetails) {
-                    //create a record for early settlement form 
+                    //create a record for early settlement form
                     $earlySettleLoan = EarlySettlement::create([
                         'user_id' => $request->user()->id,
                         'car_detail_id' => $CarLoan->id,
@@ -167,7 +171,7 @@ class CarLoans extends Controller
                     $loans_from_profit = floatval($application->principal_interest) - floatval($application->principal_amount);
                     //accumulate total loans from profit
                     AccruedInterests::TotalProfitLoans($loans_from_profit);
-                    
+
                     return response()->json([
                         'status' => true,
                         'message' => 'Car Loan Application has been successfully closed'
