@@ -42,11 +42,11 @@ class AllApprovedUnsettledLoans extends Controller
     }
 
 
-    public function FilterFeesLoansBasedTime(Request $request)
+    public function FilterSchoolFeesLoansBasedTime(Request $request)
     {
 
-        $fromdate =   Carbon::createFromFormat('Y-d-m', $request->from_date)->startOfDay();
-        $todate =  Carbon::createFromFormat('Y-d-m', $request->to_date)->endOfDay();
+        $fromdate =   Carbon::createFromFormat('Y-m-d', $request->from_date)->startOfDay();
+        $todate =  Carbon::createFromFormat('Y-m-d', $request->to_date)->endOfDay();
         try {
             $applications = ApplicationDetails::with([
                 'user' => function ($query) {

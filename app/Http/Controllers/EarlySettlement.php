@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CarLoans;
 use App\Models\ChristmasLoan;
 use App\Models\EasterLoans;
+use App\Models\EmergencyLoans;
 use App\Models\FoundersDayLoan;
 use App\Models\HappyBirthdayLoan;
 use App\Models\LoanApplication;
@@ -38,7 +39,25 @@ class EarlySettlement extends Controller
             ], 401);
         }
         $early_settlement_id = $request->id;
-        $application = \App\Models\EarlySettlement::where('id', $early_settlement_id)->first();
+        $application = \App\Models\EarlySettlement::where(function($query) use ($early_settlement_id, $request) {
+            $query->where('school_fees_detail_id', $early_settlement_id)
+                ->where('type_of_loan_taken', $request->type_of_loan_taken)
+                ->orWhere('happy_birthday_detail_id', $early_settlement_id)
+                ->where('type_of_loan_taken', $request->type_of_loan_taken)
+                ->orWhere('loan_detail_id', $early_settlement_id)
+                ->where('type_of_loan_taken', $request->type_of_loan_taken)
+                ->orWhere('founders_day_detail_id', $early_settlement_id)
+                ->where('type_of_loan_taken', $request->type_of_loan_taken)
+                ->orWhere('car_detail_id', $early_settlement_id)
+                ->where('type_of_loan_taken', $request->type_of_loan_taken)
+                ->orWhere('christmas_detail_id', $early_settlement_id)
+                ->where('type_of_loan_taken', $request->type_of_loan_taken)
+                ->orWhere('easter_detail_id', $early_settlement_id)
+                ->where('type_of_loan_taken', $request->type_of_loan_taken)
+                ->orWhere('emergency_detail_id', $early_settlement_id)
+                ->where('type_of_loan_taken', $request->type_of_loan_taken);
+        })
+        ->first();
         if ($application == null ){
             return response()->json([
                 'status' => false,
@@ -84,7 +103,11 @@ class EarlySettlement extends Controller
                 $EasterApplication->loan_settlement_status = 'IN-PROGRESS';
                 $EasterApplication->save();
             }
-
+            else if ($request->type_of_loan_taken === 'EMERGENCY_APPLICATION_FORM') {
+                $EmergencyApplication = EmergencyLoans::where(['application_name' => $request->type_of_loan_taken, 'id' => $early_settlement_id])->first();
+                $EmergencyApplication->loan_settlement_status = 'IN-PROGRESS';
+                $EmergencyApplication->save();
+            }
             return response()->json([
                 'status' => true,
                 'message' => 'You have successfully initiated Early Settlement for your loan applied.Wait for Approval',
@@ -96,7 +119,8 @@ class EarlySettlement extends Controller
     public function showUserUnsettledAppliedLoans(Request $request)
     {
         try {
-            $userAppliedLoans = \App\Models\EarlySettlement::where(['user_id' => $request->user()->id])->with(['LoanApplication', 'HappyBirthdayLoan', 'SchoolFeesLoan','CarLoan','FoundersDayLoan','ChristmasLoan','EasterLoan'])->orderBy('created_at', 'desc')->get();
+            $userAppliedLoans = \App\Models\EarlySettlement::where(['user_id' => $request->user()->id])->with(['LoanApplication', 'HappyBirthdayLoan', 'SchoolFeesLoan','CarLoan','FoundersDayLoan','ChristmasLoan','EasterLoan','EmergencyLoan'])->orderBy('created_at', 'desc')->get();
+
             if (count($userAppliedLoans) < 1) {
                 return response()->json([
                     'status' => false,
@@ -130,11 +154,15 @@ class EarlySettlement extends Controller
                 if ($application->EasterLoan) {
                     $filteredArray[] = $application->EasterLoan->toArray();
                 }
+                if ($application->EmergencyLoan) {
+                    $filteredArray[] = $application->EmergencyLoan->toArray();
+                }
             }
             //check application that has not totally been settled
             $convertObject = collect($filteredArray);
+
             $checkUnsettledLoans = $convertObject->filter(function ($query) {
-                return $query["loan_settlement_status"] !== "COMPLETED" && $query['application_status'] === 'APPROVED';
+              return $query["loan_settlement_status"] !== "COMPLETED" && $query['application_status'] === 'APPROVED';
             });
 
             return response()->json($checkUnsettledLoans->values()->all(), 200);
@@ -653,4 +681,76 @@ class EarlySettlement extends Controller
         }
     }
 
+
+
+
+    public function ApproveEarlyStatementFormForEmergencyLoan(Request $request)
+    {
+        try {
+            $EmergencyData = Validator::make(
+                $request->all(),
+                [
+                    'application_status' => 'required',
+                    'approval_status' => 'required',
+                    'amount_paid' => 'required'
+                ]
+            );
+
+            if ($EmergencyData->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $EmergencyData->errors()
+                ], 401);
+            }
+
+
+            $emergency_id = $request->route('emergency_loan');
+            $application_status = $request->application_status;
+            $approval_status = $request->approval_status;
+            $comment = $request->comment;
+            $effective_date_of_payment = $request->effective_date_of_payment;
+            $amount_paid = $request->amount_paid;
+
+
+            $application = \App\Models\EmergencyLoans::where('id', $emergency_id)->first();
+
+            if (!$application) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Application id not found'
+                ], 422);
+            } else {
+                $application->application_status = $application_status;
+                $application->approval_status = $approval_status;
+                $application->comment = $comment;
+                $application->effective_date_of_payment = $effective_date_of_payment;
+                //after early Settlement for happy birthday application has been approved let update these data in our database
+                //'loan_settlement_status',
+                //'total_loan_amount_payable',
+                // 'settled_loan_amount',
+                // 'oustanding_loan_balance',
+                //  'amount_paid'
+                //settled loan amount will be computations of cash amounts to offset applied loan
+
+                if ($application_status === 'APPROVED') {
+                    $application->settled_loan_amount = $application->settled_loan_amount + $amount_paid;
+                    $application->oustanding_loan_balance = $application->total_loan_amount_payable - $application->settled_loan_amount <= 0 ? 0.00 : $application->total_loan_amount_payable - $application->settled_loan_amount;
+                    $application->loan_settlement_status = $application->oustanding_loan_balance <= 0 ? 'COMPLETED' : 'NOT-COMPLETED';
+                    if ($application->save()) {
+                        return response()->json([
+                            'status' => true,
+                            'message' => 'Emergency Loan Application has been successfully closed'
+                        ], 200);
+                    }
+                }
+
+            }
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
 }

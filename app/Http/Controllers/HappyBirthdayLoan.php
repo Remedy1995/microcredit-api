@@ -18,8 +18,13 @@ class HappyBirthdayLoan extends Controller
 
         $happybirthday_id = $request->route('happy_birthday_loan');
 
-        $application = \App\Models\HappyBirthdayLoan::with('earlySettlement')->where('id', $happybirthday_id)->first();
-        if (!$application) {
+       // $application = \App\Models\HappyBirthdayLoan::with('earlySettlement')->where('id', $happybirthday_id)->first();
+
+       $application = \App\Models\EarlySettlement::select('early_settlement_form.*', 'happy_birthday_loan.*')
+       ->join('happy_birthday_loan', 'happy_birthday_loan.id', '=', 'early_settlement_form.happy_birthday_detail_id')
+       ->where('happy_birthday_loan.id', $happybirthday_id)
+       ->get();
+       if (!$application) {
             return response()->json([
                 'status' => false,
                 'data' => [],
@@ -79,7 +84,8 @@ class HappyBirthdayLoan extends Controller
                 'effective_date_of_payment' => $request->effective_date_of_payment,
                 // 'phoneNumber' => $request->phoneNumber,
                 // 'dob' => $request->dob,
-                'w_f_no' => $request->user()->employee_code,
+               'w_f_no' => $request->user()->employee_code,
+               //'w_f_no' => 'TNS006',
                 'application_status' => 'IN-PROGRESS',
                 'approval_status' => 'PENDING',
                 'comment' => $request->comment,

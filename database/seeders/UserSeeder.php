@@ -25,6 +25,7 @@ class UserSeeder extends Seeder {
                 'email' => 'admin@maritime.com',
                 'password' => Hash::make('12345678'),
                 'role' => 'Admin',
+                'granted_access'=>1,
                  'employee_code'=>'Q1234568',
                 'next_of_kin_name' => 'Not Applicable',
                 'next_of_kin_phone' => 'Not Applicable',

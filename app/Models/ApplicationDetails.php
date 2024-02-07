@@ -16,10 +16,11 @@ class ApplicationDetails extends Model
         'school_fees_detail_id',
         'happy_birthday_detail_id',
         'loan_detail_id',
-         'car_detail_id',
-         'founders_day_detail_id',
-          'christmas_detail_id',
-          'easter_detail_id'
+        'car_detail_id',
+        'founders_day_detail_id',
+        'christmas_detail_id',
+        'easter_detail_id',
+        'emergency_detail_id'
     ];
 
     public function user()
@@ -43,18 +44,26 @@ class ApplicationDetails extends Model
         return $this->belongsTo(SchoolFeesLoan::class, 'school_fees_detail_id', 'id');
     }
 
-    public function CarLoan(){
-        return $this->belongsTo(CarLoans::class,'car_detail_id','id');
+    public function CarLoan()
+    {
+        return $this->belongsTo(CarLoans::class, 'car_detail_id', 'id');
     }
-    public function FoundersDayLoan(){
-        return $this->belongsTo(FoundersDayLoan::class,'founders_day_detail_id','id');
-    }
-
-    public function ChristmasLoan(){
-        return $this->belongsTo(ChristmasLoan::class,'christmas_detail_id','id');
+    public function FoundersDayLoan()
+    {
+        return $this->belongsTo(FoundersDayLoan::class, 'founders_day_detail_id', 'id');
     }
 
-    public function EasterLoan(){
-        return $this->belongsTo(EasterLoans::class,'easter_detail_id','id');
+    public function ChristmasLoan()
+    {
+        return $this->belongsTo(ChristmasLoan::class, 'christmas_detail_id', 'id');
+    }
+
+    public function EasterLoan()
+    {
+        return $this->belongsTo(EasterLoans::class, 'easter_detail_id', 'id');
+    }
+
+    public function EmergencyLoan(){
+        return $this->belongsTo(EmergencyLoans::class,'emergency_detail_id','id');
     }
 }

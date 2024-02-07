@@ -14,8 +14,11 @@ class ChristmasLoan extends Controller
     public function show(Request $request)
     {
         $christmas_id = $request->route('christmas_loan');
-
-        $application = \App\Models\ChristmasLoan::with('earlySettlement')->where('id', $christmas_id)->first();
+        $application = \App\Models\EarlySettlement::select('early_settlement_form.*', 'christmas_loan.*')
+        ->join('christmas_loan', 'christmas_loan.id', '=', 'early_settlement_form.christmas_detail_id')
+        ->where('christmas_loan.id', $christmas_id)
+        ->get();
+       // $application = \App\Models\ChristmasLoan::with('earlySettlement')->where('id', $christmas_id)->first();
         if (!$application) {
             return response()->json([
                 'status' => false,

@@ -13,6 +13,8 @@ use App\Models\SchoolFeesLoan;
 use App\Utilities\RecordTransactions;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpParser\Node\Expr\Cast\Object_;
+use stdClass;
 
 class LoanRepayment extends Controller
 {
@@ -23,14 +25,14 @@ class LoanRepayment extends Controller
     {
         $employee_code = $request->employee_code;
         try {
-            $userLoanRepayments = \App\Models\LoanRepayments::where('employee_code', $employee_code)->orderBy('date','desc')->get();
+            $userLoanRepayments = \App\Models\LoanRepayments::where('employee_code', $employee_code)->orderBy('created_at', 'desc')->get();
             if (count($userLoanRepayments) < 1) {
                 return response()->json(
                     [
                         'status' => false,
-                        'message' => 'Sorry user employee code does not exist'
+                        'message' => [],
                     ],
-                    400
+                    200
                 );
             }
 
@@ -78,17 +80,26 @@ class LoanRepayment extends Controller
 
             $data = $data[0]->toArray();
 
-            $excelData = RecordTransactions::FormatExcelData($data);
+            $excelData = RecordTransactions::FormatExcelLoanData($data);
             $convertData = json_decode($excelData, true);
+            //associative array
+            $employeeObject = array();
+            $employeeCodeArray = array();
+            $number = 0;
             //return ($convertData);
             foreach ($convertData as $row) {
                 //return $data;
                 $employeeCode = $row['employee_code'] ?? null;
                 $employeeAmount = $row['Principal_amount'] ?? null;
                 $monthlyRepayment = $row['monthly_repayment_amount'] ?? null;
+                //push employeeCode unto a new object
+                $employeeCodeArray[] = $employeeCode;
+                // if (isset($employeeObject->$employeeCode)) {
+                //     $employeeObject->employeeCode = $employeeCode;
+                // }
 
-                //return $employeeCode;
-                if ($employeeCode===null || !$employeeAmount || $monthlyRepayment) {
+
+                if (!$employeeCode || !$employeeAmount || !$monthlyRepayment) {
                     return response()->json([
                         'status' => false,
                         'message' => 'Incorrect Loan Repayment File uploaded should include  monthly Repayment Amount or employee code data'
@@ -100,49 +111,97 @@ class LoanRepayment extends Controller
                     'monthly_repayment_amount' => $monthlyRepayment,
                 ]);
             }
+
+            //check if there is duplicates entry in the excel sheet
+            $checkDuplicates = RecordTransactions::CheckDuplicates($employeeCodeArray, $employeeObject);
+            if ($checkDuplicates) {
+                return response()->json([
+                    'status' => false,
+                    'data' => $checkDuplicates,
+                    'message' => 'Sorry there is duplicate entry for this employee code ' . $checkDuplicates . ' Please correct it'
+                ], 400);
+            }
             if ($loanRepayments) {
                 //after we have recorded loan repayment amount let update the loan oustanding balance for the loan
                 foreach ($convertData as $row) {
                     $employeeCode = $row['employee_code'] ?? null;
                     $employeeAmount = $row['Principal_amount'] ?? null;
                     $monthlyRepayment = $row['monthly_repayment_amount'] ?? null;
+                    //push employeeCode
 
                     //after the user makes a move to settle loans we make it active so that admin can approve it
                     if ($request->type_of_loan_taken === 'HAPPY_BIRTHDAY_APPLICATION_FORM') {
-                        $happybirthdayApplication = HappyBirthdayLoan::where(['w_f_no' => $employeeCode])->first();
+                        $happybirthdayApplication = HappyBirthdayLoan::where(['w_f_no' => trim($employeeCode), 'approval_status' => 'COMPLETED'])->first();
+                        //if no record exist for that user continue
+
+                        if ($happybirthdayApplication === null) {
+                            continue;
+                        }
+                        //return $happybirthdayApplication;
                         $happybirthdayApplication->settled_loan_amount = $happybirthdayApplication->settled_loan_amount + $monthlyRepayment;
                         $happybirthdayApplication->oustanding_loan_balance = $happybirthdayApplication->total_loan_amount_payable - $happybirthdayApplication->settled_loan_amount <= 0 ? 0.00 : $happybirthdayApplication->total_loan_amount_payable - $happybirthdayApplication->settled_loan_amount;
                         $happybirthdayApplication->loan_settlement_status = $happybirthdayApplication->oustanding_loan_balance <= 0 ? 'COMPLETED' : 'NOT-COMPLETED';
+                        $happybirthdayApplication->save();
                     } else if ($request->type_of_loan_taken === 'LOAN_APPLICATION_FORM') {
-                        $loanApplication = LoanApplication::where(['w_f_no' => $employeeCode])->first();
+                        $loanApplication = LoanApplication::where(['w_f_no' => $employeeCode, 'loan_approval_status' => 'COMPLETED'])->first();
+                        //if no record exist for that user
+                        if (!$loanApplication) {
+                            continue;
+                        }
                         $loanApplication->settled_loan_amount = $loanApplication->settled_loan_amount + $monthlyRepayment;
                         $loanApplication->oustanding_loan_balance = $loanApplication->total_loan_amount_payable - $loanApplication->settled_loan_amount <= 0 ? 0.00 : $loanApplication->total_loan_amount_payable - $loanApplication->settled_loan_amount;
                         $loanApplication->loan_settlement_status = $loanApplication->oustanding_loan_balance <= 0 ? 'COMPLETED' : 'NOT-COMPLETED';
+                        $loanApplication->save();
                     } else if ($request->type_of_loan_taken === 'SCHOOL_FEES_LOAN_APPLICATION') {
-                        $SchoolFeesApplication = SchoolFeesLoan::where(['w_f_no' => $employeeCode])->first();
+                        $SchoolFeesApplication = SchoolFeesLoan::where(['w_f_no' => $employeeCode, 'approval_status' => 'COMPLETED'])->first();
+                        //if no record exist for that user
+                        if (!$SchoolFeesApplication) {
+                            continue;
+                        }
                         $SchoolFeesApplication->settled_loan_amount = $SchoolFeesApplication->settled_loan_amount + $monthlyRepayment;
                         $SchoolFeesApplication->oustanding_loan_balance = $SchoolFeesApplication->total_loan_amount_payable - $SchoolFeesApplication->settled_loan_amount <= 0 ? 0.00 : $SchoolFeesApplication->total_loan_amount_payable - $SchoolFeesApplication->settled_loan_amount;
                         $SchoolFeesApplication->loan_settlement_status = $SchoolFeesApplication->oustanding_loan_balance <= 0 ? 'COMPLETED' : 'NOT-COMPLETED';
+                        $SchoolFeesApplication->save();
                     } else if ($request->type_of_loan_taken === 'CAR_LOANS') {
-                        $carLoanApplication = CarLoans::where(['w_f_no' => $employeeCode])->first();
+                        $carLoanApplication = CarLoans::where(['w_f_no' => $employeeCode, 'approval_status' => 'COMPLETED'])->first();
+                        //if no record exist for that user
+                        if (!$carLoanApplication) {
+                            continue;
+                        }
                         $carLoanApplication->settled_loan_amount = $carLoanApplication->settled_loan_amount + $monthlyRepayment;
                         $carLoanApplication->oustanding_loan_balance = $carLoanApplication->total_loan_amount_payable - $carLoanApplication->settled_loan_amount <= 0 ? 0.00 : $carLoanApplication->total_loan_amount_payable - $carLoanApplication->settled_loan_amount;
                         $carLoanApplication->loan_settlement_status = $carLoanApplication->oustanding_loan_balance <= 0 ? 'COMPLETED' : 'NOT-COMPLETED';
+                        $carLoanApplication->save();
                     } else if ($request->type_of_loan_taken === 'FOUNDERS_DAY_APPLICATION_FORM') {
-                        $foundersDayApplication = FoundersDayLoan::where(['w_f_no' => $employeeCode])->first();
+                        $foundersDayApplication = FoundersDayLoan::where(['w_f_no' => $employeeCode, 'approval_status' => 'COMPLETED'])->first();
+                        //if no record exist for that user
+                        if (!$foundersDayApplication) {
+                            continue;
+                        }
                         $foundersDayApplication->settled_loan_amount = $foundersDayApplication->settled_loan_amount + $monthlyRepayment;
                         $foundersDayApplication->oustanding_loan_balance = $foundersDayApplication->total_loan_amount_payable - $foundersDayApplication->settled_loan_amount <= 0 ? 0.00 : $foundersDayApplication->total_loan_amount_payable - $foundersDayApplication->settled_loan_amount;
                         $foundersDayApplication->loan_settlement_status = $foundersDayApplication->oustanding_loan_balance <= 0 ? 'COMPLETED' : 'NOT-COMPLETED';
+                        $foundersDayApplication->save();
                     } else if ($request->type_of_loan_taken === 'CHRISTMAS_APPLICATION_FORM') {
-                        $christmasApplication = ChristmasLoan::where(['w_f_no' => $employeeCode])->first();
+                        $christmasApplication = ChristmasLoan::where(['w_f_no' => $employeeCode, 'approval_status' => 'COMPLETED'])->first();
+                        //if no record exist for that user
+                        if (!$christmasApplication) {
+                            continue;
+                        }
                         $christmasApplication->settled_loan_amount = $christmasApplication->settled_loan_amount + $monthlyRepayment;
                         $christmasApplication->oustanding_loan_balance = $christmasApplication->total_loan_amount_payable - $christmasApplication->settled_loan_amount <= 0 ? 0.00 : $christmasApplication->total_loan_amount_payable - $christmasApplication->settled_loan_amount;
                         $christmasApplication->loan_settlement_status = $christmasApplication->oustanding_loan_balance <= 0 ? 'COMPLETED' : 'NOT-COMPLETED';
+                        $christmasApplication->save();
                     } else if ($request->type_of_loan_taken === 'EASTER_APPLICATION_FORM') {
-                        $EasterApplication = EasterLoans::where(['w_f_no' => $employeeCode])->first();
+                        $EasterApplication = EasterLoans::where(['w_f_no' => $employeeCode, 'approval_status' => 'COMPLETED'])->first();
+                        //if no record exist for that user
+                        if (!$EasterApplication) {
+                            continue;
+                        }
                         $EasterApplication->settled_loan_amount = $EasterApplication->settled_loan_amount + $monthlyRepayment;
                         $EasterApplication->oustanding_loan_balance = $EasterApplication->total_loan_amount_payable - $EasterApplication->settled_loan_amount <= 0 ? 0.00 : $EasterApplication->total_loan_amount_payable - $EasterApplication->settled_loan_amount;
                         $EasterApplication->loan_settlement_status = $EasterApplication->oustanding_loan_balance <= 0 ? 'COMPLETED' : 'NOT-COMPLETED';
+                        $EasterApplication->save();
                     }
                 }
 
@@ -151,7 +210,6 @@ class LoanRepayment extends Controller
                     'message' => 'Loan Monthly Repayments has been uploaded successfully'
                 ], 201);
             }
-
         } catch (\Exception $error) {
             return response()->json([
                 'status' => false,
