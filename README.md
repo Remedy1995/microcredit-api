@@ -16,4 +16,4 @@ type this in the factory class
         do this in the Database Seeder Table
         LoanApplication::factory(10)->create();
 
-and type php artisan migrate
+and type php artisan migrate# microcredit-api
