@@ -12,6 +12,8 @@ class LoanRepayments extends Model
     protected $fillable =[
         'monthly_repayment_amount',
         'employee_code',
-        'Principal_amount'
+        'Principal_amount',
+         'type_of_loan_taken',
+         'loan_payment_type'
     ];
 }

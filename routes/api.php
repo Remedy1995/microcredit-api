@@ -18,7 +18,10 @@ use App\Http\Controllers\LoanController;
 use App\Http\Controllers\LoanRepayment;
 use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\MonthlyContributions;
+use App\Http\Controllers\OtherLoans;
 use App\Http\Controllers\PostNews;
+use App\Http\Controllers\RefundLoans;
+use App\Http\Controllers\Refunds;
 use App\Http\Controllers\SchoolFeesLoan;
 use App\Http\Controllers\TestDb;
 use App\Models\User;
@@ -46,10 +49,12 @@ Route::prefix('v1')->group(function () {
     Route::apiResource('/emergency-loan',EmergencyLoans::class)->middleware('auth:sanctum');
     Route::apiResource('/christmas-loan',ChristmasLoan::class)->middleware('auth:sanctum');
     Route::apiResource('/easter-loan',EasterLoans::class)->middleware('auth:sanctum');
+    Route::apiResource('/other-loan',OtherLoans::class)->middleware('auth:sanctum');
     Route::apiResource('/all-interest-rates', AllInterestRates::class)->middleware('auth:sanctum');
     Route::get('/all-school-fees-approved-loans',[AllApprovedUnsettledLoans::class,'AllSchoolFeesLoans'])->middleware('auth:sanctum');
     Route::post('/all-school-fees-filter-dates',[AllApprovedUnsettledLoans::class,'FilterSchoolFeesLoansBasedTime'])->middleware('auth:sanctum');
     Route::get('/all-pending-applications', [AllApplications::class, 'AllPendingApprovals'])->middleware('auth:sanctum');
+    Route::get('/user-refund', [AllApplications::class,'UserRefundAmount'])->middleware('auth:sanctum');
     Route::get('/all-approved-applications', [AllApplications::class, 'AllApplicationApprovals'])->middleware('auth:sanctum');
     Route::post('/monthly-contributions', [MonthlyContributions::class, 'monthlyContributions'])->middleware('auth:sanctum');
     Route::post('/loan-repayments', [LoanRepayment::class,'LoanRepayments'])->middleware('auth:sanctum');
@@ -60,6 +65,8 @@ Route::prefix('v1')->group(function () {
     Route::post('/get-user-accrued-benefits', [AccruedBenefits::class, 'getUserAccruedBenefits'])->middleware('auth:sanctum');
     Route::post('/get-user-contributions', [MonthlyContributions::class, 'getUserContributions'])->middleware('auth:sanctum');
     Route::post('/create-news', [PostNews::class, 'PostNews'])->middleware('auth:sanctum');
+    Route::post('/request-refunds', [RefundLoans::class,'RequestRefunds'])->middleware('auth:sanctum');
+    Route::get('/all-requested-refunds', [RefundLoans::class,'GetAllRequestedRefunds'])->middleware('auth:sanctum');
     Route::get('/fetch-data', [PostNews::class, 'fetchResults'])->middleware('auth:sanctum');
     Route::post('/change-in-member-contributions', [ChangeInMemberContribution::class, 'MakeChangeMemberContribution'])->middleware('auth:sanctum');
     Route::get('/change-in-member-contributions', [ChangeInMemberContribution::class, 'GetPendingChangeInMemberContributions'])->middleware('auth:sanctum');
@@ -84,7 +91,9 @@ Route::prefix('v1')->group(function () {
     Route::put('/approve-all-early-settlement-forms-christmas-loans-application/{christmas_loan}',[EarlySettlement::class,'ApproveEarlyStatementFormForChristmasLoan'])->middleware('auth:sanctum');
     Route::put('/approve-all-early-settlement-forms-easter-loans-application/{easter_loan}',[EarlySettlement::class,'ApproveEarlyStatementFormForEasterLoan'])->middleware('auth:sanctum');
     Route::put('/approve-all-early-settlement-forms-emergency-loans-application/{emergency_loan}',[EarlySettlement::class,'ApproveEarlyStatementFormForEmergencyLoan'])->middleware('auth:sanctum');
+    Route::put('/approve-all-early-settlement-forms-other-loans-application/{other_loan}',[EarlySettlement::class,'ApproveEarlyStatementFormForOtherLoan'])->middleware('auth:sanctum');
     Route::get('/show-user-applied-loans',[EarlySettlement::class,'showUserUnsettledAppliedLoans'])->middleware('auth:sanctum');
+    Route::get('/show-user-loans-refunds',[EarlySettlement::class,'showUserLoansRefunds'])->middleware('auth:sanctum');
     Route::post('/create-early-settlement-forms',[EarlySettlement::class,'UserSettleLoans'])->middleware('auth:sanctum');
 });
 

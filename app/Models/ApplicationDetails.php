@@ -20,7 +20,8 @@ class ApplicationDetails extends Model
         'founders_day_detail_id',
         'christmas_detail_id',
         'easter_detail_id',
-        'emergency_detail_id'
+        'emergency_detail_id',
+        'other_detail_id'
     ];
 
     public function user()
@@ -65,5 +66,9 @@ class ApplicationDetails extends Model
 
     public function EmergencyLoan(){
         return $this->belongsTo(EmergencyLoans::class,'emergency_detail_id','id');
+    }
+
+    public function OtherLoan(){
+        return $this->belongsTo(OtherLoans::class,'other_detail_id','id');
     }
 }

@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('founders_day_loan_application', function (Blueprint $table) {
+        Schema::create('other_loans', function (Blueprint $table) {
             $table->id();
             $table->string('principal_amount');
             $table->string('application_name');
@@ -41,6 +41,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('founders_day_loan_application');
+        Schema::dropIfExists('other_loans');
     }
 };
