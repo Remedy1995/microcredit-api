@@ -48,13 +48,16 @@ class AllApplications extends Controller
                 'emergencyloan' => function ($query) {
                     $query->where('loan_settlement_status', 'IN-PROGRESS');
                 },
+                'otherloan' => function ($query) {
+                    $query->where('loan_settlement_status', 'IN-PROGRESS');
+                },
 
             ])->orderBy('created_at', 'desc')->get();
 
             $filteredApplications = $applications->filter(function ($application) {
-                return $application->schoolfeesloan || $application->happybirthdayloan || $application->loanapplication
+                return $application->schoolfeesloan  || $application->happybirthdayloan || $application->loanapplication
                     || $application->carloan || $application->christmasloan || $application->foundersdayloan ||
-                    $application->easterloan || $application->emergencyloan;
+                    $application->easterloan || $application->emergencyloan  || $application->otherloan;
             });
 
             $data = $filteredApplications->map(function ($application) {
@@ -70,6 +73,7 @@ class AllApplications extends Controller
                     'school_fees_detail_id' => optional($application->schoolfeesloan)->id,
                     'car_detail_id' => optional($application->carloan)->id,
                     'emergency_detail_id' => optional($application->emergencyloan)->id,
+                    'other_detail_id' => optional($application->otherloan)->id,
                     'user' => $application->user,
                     'schoolfeesloan' => $application->schoolfeesloan,
                     'happybirthdayloan' => $application->happybirthdayloan,
@@ -78,7 +82,8 @@ class AllApplications extends Controller
                     'christmasloan' => $application->christmasloan,
                     'easterloan' => $application->easterloan,
                     'foundersdayloan' => $application->foundersdayloan,
-                    'emergencyloan'=>$application->emergencyloan
+                    'emergencyloan' => $application->emergencyloan,
+                    'otherloan' => $application->otherloan
                 ];
             });
 
@@ -123,12 +128,15 @@ class AllApplications extends Controller
                 },
                 'emergencyloan' => function ($query) {
                     $query->where('application_status', 'IN-PROGRESS');
+                },
+                'otherloan' => function ($query) {
+                    $query->where('application_status', 'IN-PROGRESS');
                 }
             ])->orderBy('created_at', 'desc')->get();
             $filteredApplications = $applications->filter(function ($application) {
                 return $application->schoolfeesloan || $application->happybirthdayloan || $application->loanapplication || $application->carloan
                     || $application->foundersdayloan || $application->christmasloan
-                     || $application->easterloan || $application->emergencyloan;
+                    || $application->easterloan || $application->emergencyloan ||  $application->otherloan;
             });
 
             $data = $filteredApplications->map(function ($application) {
@@ -141,7 +149,8 @@ class AllApplications extends Controller
                     'christmas_detail_id' => optional($application->christmasloan)->id,
                     'founders_day_detail_id' => optional($application->foundersdayloan)->id,
                     'easter_detail_id' => optional($application->easterloan)->id,
-                     'emergency_detail_id'=>optional($application->emergencyloan)->id,
+                    'emergency_detail_id' => optional($application->emergencyloan)->id,
+                    'other_detail_id' => optional($application->otherloan)->id,
                     'user' => $application->user,
                     'schoolfeesloan' => $application->schoolfeesloan,
                     'happybirthdayloan' => $application->happybirthdayloan,
@@ -150,7 +159,8 @@ class AllApplications extends Controller
                     'foundersdayloan' => $application->foundersdayloan,
                     'christmasloan' => $application->christmasloan,
                     'easterloan' => $application->easterloan,
-                    'emergencyloan'=>$application->emergencyloan
+                    'emergencyloan' => $application->emergencyloan,
+                    'otherloan' => $application->otherloan
                 ];
             });
 
@@ -195,13 +205,16 @@ class AllApplications extends Controller
                 },
                 'emergencyloan' => function ($query) {
                     $query->where('approval_status', "COMPLETED");
+                },
+                'otherloan' => function ($query) {
+                    $query->where('approval_status', "COMPLETED");
                 }
-            ])->orderBy('created_at','desc')->get();
+            ])->orderBy('created_at', 'desc')->get();
             foreach ($applications as $key => $application) {
                 if (
                     $application->schoolfeesloan == null && $application->happybirthdayloan == null && $application->loanapplication == null
                     &&  $application->carloan == null && $application->foundersdayloan == null && $application->christmasloan == null
-                     && $application->easterloan && $application->emergencyloan
+                    && $application->easterloan == null && $application->emergencyloan == null && $application->otherloan == null
                 ) {
                     unset($applications[$key]);
                 }
@@ -224,8 +237,97 @@ class AllApplications extends Controller
     public function userApplicationHistory(Request $request)
     {
         try {
-            $userapplications = ApplicationDetails::where(['user_id' => $request->user()->id])->with(['user', 'happybirthdayloan', 'schoolfeesloan', 'loanapplication', 'carloan', 'foundersdayloan', 'christmasloan', 'easterloan','emergencyloan'])->orderBy('created_at', 'desc')->get();
+            $userapplications = ApplicationDetails::where(['user_id' => $request->user()->id])->with(['user', 'happybirthdayloan', 'schoolfeesloan', 'loanapplication', 'carloan', 'foundersdayloan', 'christmasloan', 'easterloan', 'emergencyloan', 'otherloan'])->orderBy('created_at', 'desc')->get();
             return response()->json($userapplications, 200);
+        } catch (\Exception $error) {
+            return response()->json([
+                'status' => false,
+                'message' => $error->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function UserRefundAmount(Request $request)
+    {
+        try {
+            $userapplications = ApplicationDetails::where(['user_id' => $request->user()->id])->with([
+                'happybirthdayloan',
+                'schoolfeesloan' => function ($query) {
+                    $query->where('refund_amount', '<>', '0.00');
+                },
+                'loanapplication' => function ($query) {
+                    $query->where('refund_amount', '<>', '0.00');
+                },
+                'carloan'  => function ($query) {
+                    $query->where('refund_amount', '<>', '0.00');
+                },
+                'foundersdayloan' => function ($query) {
+                    $query->where('refund_amount', '<>', '0.00');
+                },
+                'christmasloan' => function ($query) {
+                    $query->where('refund_amount', '<>', '0.00');
+                },
+                'easterloan' => function ($query) {
+                    $query->where('refund_amount', '<>', '0.00');
+                },
+                'emergencyloan' => function ($query) {
+                    $query->where('refund_amount', '<>', '0.00');
+                },
+                'otherloan' => function ($query) {
+                    $query->where('refund_amount', '<>', '0.00');
+                },
+            ])->orderBy('created_at', 'desc')->get();
+
+            $trimArray = [];
+            //trim data which has null values
+            foreach ($userapplications as $userapp) {
+                if ($userapp->schoolfeesloan) {
+                    $trimArray[] = $userapp->schoolfeesloan;
+                }
+                if ($userapp->happybirthdayloan) {
+                    $trimArray[] = $userapp->happybirthdayloan;
+                }
+                if ($userapp->loanapplication) {
+                    $trimArray[] = $userapp->loanapplication;
+                }
+                if ($userapp->carloan) {
+                    $trimArray[] = $userapp->carloan;
+                }
+                if ($userapp->foundersdayloan) {
+                    $trimArray[] = $userapp->foundersdayloan;
+                }
+                if ($userapp->christmasloan) {
+                    $trimArray[] = $userapp->christmasloan;
+                }
+                if ($userapp->easterloan) {
+                    $trimArray[] = $userapp->easterloan;
+                }
+                if ($userapp->emergencyloan) {
+                    $trimArray[] = $userapp->emergencyloan;
+                }
+                if ($userapp->otherloan) {
+                    $trimArray[] = $userapp->otherloan;
+                }
+            }
+
+            $filterArray = collect($trimArray)->filter(function ($application) {
+                return   $application->refund_amount > 0.00;
+            });
+
+            $sumCallback = function ($accumulator, $currentValue) {
+                return   $accumulator + $currentValue->refund_amount;
+            };
+            // Reduce the array to calculate the sum
+            $sum = array_reduce($filterArray->values()->all(), $sumCallback, 0);
+
+            return response()->json(
+                [
+                    'status' => true,
+                    'data' => $sum
+                ],
+                200
+            );
         } catch (\Exception $error) {
             return response()->json([
                 'status' => false,

@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string('comment')->nullable();
             $table->float('total_loan_amount_payable')->default(0.0);
             $table->float('settled_loan_amount')->default(0.0);
+            $table->float('refund_amount')->default(0.0);
             $table->string('loan_settlement_status');
             $table->float('oustanding_loan_balance')->default(0.0);
             $table->timestamps();

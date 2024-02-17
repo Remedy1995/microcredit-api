@@ -38,12 +38,12 @@ class RecordTransactions
         foreach ($checkMonths as $months) {
             $parseMonth = Carbon::parse($months->created_at)->month;
             $parseYear = Carbon::parse($months->created_at)->year;
-            $finalMonth = strlen((string)$parseMonth) < 2 ? '0' . $parseMonth : $parseMonth;
+            $finalMonth = strlen($parseMonth < 2) ? '0' . $parseMonth : $parseMonth;
             $allPaidDates[] = $finalMonth . '-' . $parseYear;
         }
         $checkPaidDates = in_array($joinCurrentMonthYear, $allPaidDates);
         if ($checkPaidDates) {
-            return 0;
+            return 1;
         } else {
             return 0;
         }
@@ -113,9 +113,9 @@ class RecordTransactions
         // Extract columns "employee_code" and "monthly_amount_contribution"
         $processedData = array_map(function ($row) {
             return [
-                'employee_code' => $row[0],
+                'employee_code' => $row[0]?? null,
                 // 'Principal_amount' => $row[2],
-                'monthly_amount_contribution' => $row[2]
+                'monthly_amount_contribution' => $row[2] ?? null
             ];
         }, $data);
         // Remove the first row (headers)
@@ -146,9 +146,9 @@ class RecordTransactions
         // Extract columns "employee_code" and "monthly_amount_contribution"
         $processedData = array_map(function ($row) {
             return [
-                'employee_code' => $row[0],
-                'Principal_amount' => $row[1],
-                'monthly_repayment_amount' => $row[2],
+                'employee_code' => $row[0] ?? null,
+                'Principal_amount' => $row[2] ?? null ,
+                'monthly_repayment_amount' => $row[3] ?? null,
             ];
         }, $data);
         // Remove the first row (headers)
