@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Models\ApplicationDetails;
 use App\Models\EarlySettlement;
 use App\Utilities\AccruedInterests;
+use App\Utilities\FormsGuard;
 use Illuminate\Support\Facades\Validator;
 
 class EmergencyLoans extends Controller{
@@ -62,6 +63,16 @@ class EmergencyLoans extends Controller{
                     'message' => 'validation error',
                     'errors' => $emergencyData->errors()
                 ], 401);
+            }
+
+
+            $checkApplicationStatus = FormsGuard::CheckExistingApplicationInProgress($request->user()->id,'EMERGENCY_APPLICATION_FORM');
+
+            if($checkApplicationStatus){
+                return response()->json([
+                    'status'=> false,
+                    'message'=>'Sorry you cannot create another form you already have a pending loan form in progress'
+                ],400);
             }
 
             ///return $request->all();

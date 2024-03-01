@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use App\Models\ApplicationDetails;
 use App\Models\EarlySettlement;
 use App\Utilities\AccruedInterests;
+use App\Utilities\FormsGuard;
 use Illuminate\Support\Facades\Validator;
 
 class FoundersDayLoan extends Controller{
@@ -64,6 +65,16 @@ class FoundersDayLoan extends Controller{
                 ], 401);
             }
 
+
+            $checkApplicationStatus = FormsGuard::CheckExistingApplicationInProgress($request->user()->id,'FOUNDERS_DAY_APPLICATION_FORM');
+
+            if($checkApplicationStatus){
+                return response()->json([
+                    'status'=> false,
+                    'message'=>'Sorry you cannot create another form you already have a pending loan form in progress'
+                ],400);
+            }
+
             ///return $request->all();
             $application = \App\Models\ApplicationTypes::where('application_type_slug', 'FOUNDERS_DAY_APPLICATION_FORM')->first();
             $foundersDayLoan = \App\Models\FoundersDayLoan::create([
@@ -85,6 +96,7 @@ class FoundersDayLoan extends Controller{
                 // 'settled_loan_amount' => $request->settled_loan_amount,
                 'oustanding_loan_balance' => $request->principal_interest
             ]);
+
 
 
 

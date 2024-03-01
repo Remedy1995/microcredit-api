@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ApplicationDetails;
 use App\Models\EarlySettlement;
 use App\Utilities\AccruedInterests;
+use App\Utilities\FormsGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -70,6 +71,14 @@ class CarLoans extends Controller
                 ], 401);
             }
 
+            $checkApplicationStatus = FormsGuard::CheckExistingApplicationInProgress($request->user()->id,'CAR_LOANS');
+
+            if($checkApplicationStatus){
+                return response()->json([
+                    'status'=> false,
+                    'message'=>'Sorry you cannot create another form you already have a pending loan form in progress'
+                ],400);
+            }
             ///return $request->all();
             $application = \App\Models\ApplicationTypes::where('application_type_slug', 'CAR_LOANS')->first();
             $CarLoan = \App\Models\CarLoans::create([

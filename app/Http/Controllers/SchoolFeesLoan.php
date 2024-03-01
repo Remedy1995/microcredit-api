@@ -7,6 +7,7 @@ use App\Models\EarlySettlement;
 use App\Models\SchoolFeesLoan as ModelsSchoolFeesLoan;
 use App\Models\TotalLoansProfit;
 use App\Utilities\AccruedInterests;
+use App\Utilities\FormsGuard;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -61,7 +62,13 @@ class SchoolFeesLoan extends Controller
                     'errors' => $schoolFeesData->errors()
                 ], 401);
             }
-
+            $checkApplicationStatus = FormsGuard::CheckExistingApplicationInProgress($request->user()->id,'SCHOOL_FEES_LOAN_APPLICATION');
+            if($checkApplicationStatus){
+                return response()->json([
+                    'status'=> false,
+                    'message'=>'Sorry you cannot create another form you already have a pending loan form in progress'
+                ],400);
+            }
             ///return $request->all();
             //search for application type id
             $application = \App\Models\ApplicationTypes::where('application_type_slug', 'SCHOOL_FEES_LOAN_APPLICATION')->first();

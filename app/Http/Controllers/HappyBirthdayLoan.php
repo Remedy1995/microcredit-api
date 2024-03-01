@@ -6,6 +6,7 @@ use App\Models\ApplicationDetails;
 use App\Models\EarlySettlement;
 use App\Models\TotalLoansProfit;
 use App\Utilities\AccruedInterests;
+use App\Utilities\FormsGuard;
 use Illuminate\Support\Facades\Validator;
 
 use Illuminate\Http\Request;
@@ -71,7 +72,13 @@ class HappyBirthdayLoan extends Controller
                     'errors' => $HappyBirthdayData->errors()
                 ], 401);
             }
-
+            $checkApplicationStatus = FormsGuard::CheckExistingApplicationInProgress($request->user()->id,'HAPPY_BIRTHDAY_APPLICATION_FORM');
+            if($checkApplicationStatus){
+                return response()->json([
+                    'status'=>false,
+                    'message'=>'Sorry you cannot create another form you already have a pending loan form in progress'
+                ],400);
+            }
             ///return $request->all();
             $application = \App\Models\ApplicationTypes::where('application_type_slug', 'HAPPY_BIRTHDAY_APPLICATION_FORM')->first();
             $happybirthdayLoan = \App\Models\HappyBirthdayLoan::create([
@@ -94,9 +101,6 @@ class HappyBirthdayLoan extends Controller
                 // 'settled_loan_amount' => $request->settled_loan_amount,
                 'oustanding_loan_balance' => $request->principal_interest
             ]);
-
-
-
             if ($happybirthdayLoan) {
                 $applicationDetails = ApplicationDetails::create([
                     'user_id' => $request->user()->id,

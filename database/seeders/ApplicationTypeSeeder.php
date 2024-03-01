@@ -125,5 +125,11 @@ class ApplicationTypeSeeder extends Seeder
              'application_type_slug'=>'OTHER_APPLICATION_FORM',
              'application_category'=>'OTHER LOAN'
         ]);
+
+        DB::table('application_types')->insert(
+            ['application_type_name'=>'LONG TERM LOANS',
+             'application_type_slug'=>'LONG_TERM_APPLICATION_FORM',
+             'application_category'=>'LONG_TERM'
+        ]);
     }
 }
