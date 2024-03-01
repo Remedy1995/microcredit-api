@@ -33,6 +33,8 @@ return new class extends Migration
             $table->foreign('emergency_detail_id')->references('id')->on('emergency_loans')->onDelete('cascade');
             $table->unsignedBigInteger('other_detail_id')->nullable();
             $table->foreign('other_detail_id')->references('id')->on('other_loans')->onDelete('cascade');
+            $table->unsignedBigInteger('long_detail_id')->nullable();
+            $table->foreign('long_detail_id')->references('id')->on('long_term')->onDelete('cascade');
             $table->timestamps();
 
         });

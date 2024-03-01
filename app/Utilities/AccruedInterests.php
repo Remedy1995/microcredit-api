@@ -25,35 +25,29 @@ class AccruedInterests
 
     public static function CalculateInterest($interestFromloans, $individualSavings, $totalContributions)
     {
-        if($interestFromloans !==0 && $individualSavings !==0 && $totalContributions !==0){
+        if ($interestFromloans !== 0 && $individualSavings !== 0 && $totalContributions !== 0) {
             return (($interestFromloans / $totalContributions) * $individualSavings);
-        }
-        else {
+        } else {
             return 0;
         }
-
     }
 
     public static function UserTotalAccruedBenefits($interestAmount, $totalContributions)
     {
-        if($interestAmount !==0 || $totalContributions!==0){
+        if ($interestAmount !== 0 || $totalContributions !== 0) {
             return ($interestAmount + $totalContributions);
-        }
-        else {
+        } else {
             return 0;
         }
-
     }
 
     public static function CalculateSubTotal($principalAmount, $interestAmount)
     {
-        if($principalAmount !=0 || $interestAmount !=0){
+        if ($principalAmount != 0 || $interestAmount != 0) {
             return $principalAmount + $interestAmount;
-        }
-        else {
+        } else {
             return 0;
         }
-
     }
 
     public static function InterestShared($loans_from_profit, $total_cumulative_savings)
@@ -71,7 +65,7 @@ class AccruedInterests
         //create an initial record
 
         $findRecord = TotalCumulativeSavings::find(1);
-        return $findRecord;
+       // return $findRecord;
         if ($findRecord) {
             $findRecord->total_cumulative_savings += $totalBalance;
             $findRecord->save();

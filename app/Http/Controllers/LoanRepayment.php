@@ -6,10 +6,13 @@ use App\Imports\ExcelImportClass;
 use App\Models\CarLoans;
 use App\Models\ChristmasLoan;
 use App\Models\EasterLoans;
+use App\Models\EmergencyLoans;
 use App\Models\FoundersDayLoan;
 use App\Models\HappyBirthdayLoan;
 use App\Models\LoanApplication;
 use App\Models\LoanRepayments;
+use App\Models\LongTermLoan;
+use App\Models\OtherLoans;
 use App\Models\SchoolFeesLoan;
 use App\Utilities\RecordTransactions;
 use Illuminate\Http\Request;
@@ -133,11 +136,11 @@ class LoanRepayment extends Controller
                     $monthlyRepayment = $row['monthly_repayment_amount'] ?? null;
                     //push employeeCode
 
-                    //after the user makes a move to settle loans we make it active so that admin can approve it
+                    //we are paying off the loan using bulk payment of the excel file uploaded using the employee code
+                    //and the type of loan
                     if ($request->type_of_loan_taken === 'HAPPY_BIRTHDAY_APPLICATION_FORM') {
                         $happybirthdayApplication = HappyBirthdayLoan::where(['w_f_no' => trim($employeeCode), 'approval_status' => 'COMPLETED','loan_settlement_status'=>'NOT-COMPLETED'])->first();
                         //if no record exist for that user continue
-
                         if ($happybirthdayApplication === null) {
                             continue;
                         }
@@ -214,6 +217,41 @@ class LoanRepayment extends Controller
                         $EasterApplication->refund_amount = ($EasterApplication->settled_loan_amount > $EasterApplication->total_loan_amount_payable) ? $EasterApplication->settled_loan_amount - $EasterApplication->total_loan_amount_payable : $EasterApplication->refund_amount;
                         $EasterApplication->save();
                     }
+                    else if ($request->type_of_loan_taken === 'EMERGENCY_APPLICATION_FORM') {
+                        $EmergencyApplication = EmergencyLoans::where(['w_f_no' => $employeeCode, 'approval_status' => 'COMPLETED','loan_settlement_status'=>'NOT-COMPLETED'])->first();
+                        //if no record exist for that user
+                        if (!$EmergencyApplication) {
+                            continue;
+                        }
+                        $EmergencyApplication->settled_loan_amount = $EmergencyApplication->settled_loan_amount + $monthlyRepayment;
+                        $EmergencyApplication->oustanding_loan_balance = $EmergencyApplication->total_loan_amount_payable - $EmergencyApplication->settled_loan_amount <= 0 ? 0.00 : $EmergencyApplication->total_loan_amount_payable - $EmergencyApplication->settled_loan_amount;
+                        $EmergencyApplication->loan_settlement_status = $EmergencyApplication->oustanding_loan_balance <= 0 ? 'COMPLETED' : 'NOT-COMPLETED';
+                        $EmergencyApplication->refund_amount = ($EmergencyApplication->settled_loan_amount > $EmergencyApplication->total_loan_amount_payable) ? $EmergencyApplication->settled_loan_amount - $EmergencyApplication->total_loan_amount_payable : $EmergencyApplication->refund_amount;
+                        $EmergencyApplication->save();
+                    } else if ($request->type_of_loan_taken === 'OTHER_APPLICATION_FORM') {
+                        $OtherApplication = OtherLoans::where(['w_f_no' => $employeeCode, 'approval_status' => 'COMPLETED','loan_settlement_status'=>'NOT-COMPLETED'])->first();
+                        //if no record exist for that user
+                        if (!$OtherApplication) {
+                            continue;
+                        }
+                        $OtherApplication->settled_loan_amount = $OtherApplication->settled_loan_amount + $monthlyRepayment;
+                        $OtherApplication->oustanding_loan_balance = $OtherApplication->total_loan_amount_payable - $OtherApplication->settled_loan_amount <= 0 ? 0.00 : $OtherApplication->total_loan_amount_payable - $OtherApplication->settled_loan_amount;
+                        $OtherApplication->loan_settlement_status = $OtherApplication->oustanding_loan_balance <= 0 ? 'COMPLETED' : 'NOT-COMPLETED';
+                        $OtherApplication->refund_amount = ($OtherApplication->settled_loan_amount > $OtherApplication->total_loan_amount_payable) ? $OtherApplication->settled_loan_amount - $OtherApplication->total_loan_amount_payable : $OtherApplication->refund_amount;
+                        $OtherApplication->save();
+                    }
+                 else if ($request->type_of_loan_taken === 'LONG_TERM_APPLICATION_FORM') {
+                    $LongTermApplication = LongTermLoan::where(['w_f_no' => $employeeCode, 'approval_status' => 'COMPLETED','loan_settlement_status'=>'NOT-COMPLETED'])->first();
+                    //if no record exist for that user
+                    if (!$LongTermApplication) {
+                        continue;
+                    }
+                    $LongTermApplication->settled_loan_amount = $LongTermApplication->settled_loan_amount + $monthlyRepayment;
+                    $LongTermApplication->oustanding_loan_balance = $LongTermApplication->total_loan_amount_payable - $LongTermApplication->settled_loan_amount <= 0 ? 0.00 : $LongTermApplication->total_loan_amount_payable - $LongTermApplication->settled_loan_amount;
+                    $LongTermApplication->loan_settlement_status = $LongTermApplication->oustanding_loan_balance <= 0 ? 'COMPLETED' : 'NOT-COMPLETED';
+                    $LongTermApplication->refund_amount = ($LongTermApplication->settled_loan_amount > $LongTermApplication->total_loan_amount_payable) ? $LongTermApplication->settled_loan_amount - $LongTermApplication->total_loan_amount_payable : $LongTermApplication->refund_amount;
+                    $LongTermApplication->save();
+                }
                 }
 
                 return response()->json([

@@ -4,43 +4,71 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 
-class AuthController extends Controller {
+class AuthController extends Controller
+{
 
 
-    public function currentUser(Request $request) {
+    public function currentUser(Request $request)
+    {
 
         $data = $request->user();
         return response()->json([
             'status' => true,
             'data' => $data
         ], 200);
-
     }
-    public function index() {
-        return User::all();
+    public function PendingUsers()
+    {
+        try {
+            $users = User::where('granted_access', 0)->get();
+            return response()->json($users, 200);
+        } catch (Exception $error) {
+            return response()->json([
+                'status' => false,
+                'data' => $error->getMessage()
+            ]);
+        }
     }
 
-    public function show(Request $request) {
+
+
+    public function ApprovedUsers()
+    {
+        try {
+            $users = User::where('granted_access', 1)->get();
+            return response()->json($users, 200);
+        } catch (Exception $error) {
+            return response()->json([
+                'status' => false,
+                'data' => $error->getMessage()
+            ]);
+        }
+    }
+
+    public function show(Request $request)
+    {
         try {
 
             $user_id = $request->route('id');
-            if(!$user_id) {
+            if (!$user_id) {
                 return response()->json(
                     [
                         'status' => false,
                         'data' => [],
                         'message' => 'User id does not exists'
                     ],
-                    404);
+                    404
+                );
             }
 
             $SpecificUserData = User::where('id', $user_id)->first();
-            if(!$SpecificUserData) {
+            if (!$SpecificUserData) {
                 return response()->json(
                     [
                         'status' => false,
@@ -58,7 +86,6 @@ class AuthController extends Controller {
                 ],
                 201
             );
-
         } catch (\Exception $error) {
             return response()->json(
                 [
@@ -67,9 +94,7 @@ class AuthController extends Controller {
                 ],
                 500
             );
-
         }
-
     }
 
 
@@ -77,7 +102,8 @@ class AuthController extends Controller {
 
 
     //
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         try {
             $validateUser = Validator::make(
                 $request->all(),
@@ -93,7 +119,7 @@ class AuthController extends Controller {
                 ]
             );
 
-            if($validateUser->fails()) {
+            if ($validateUser->fails()) {
                 return response()->json([
                     'status' => false,
                     'message' => 'validation error',
@@ -102,7 +128,7 @@ class AuthController extends Controller {
             } else {
                 //if user email does not already exist register
                 $user_email = User::where('email', $request->email)->first();
-                if(!$user_email) {
+                if (!$user_email) {
                     $newUser = User::create([
                         'firstname' => $request->firstname,
                         'lastname' => $request->lastname,
@@ -115,12 +141,12 @@ class AuthController extends Controller {
                         'role' => 'user',
                         'next_of_kin_name' => $request->next_of_kin_name,
                         'next_of_kin_phone' => $request->next_of_kin_phone,
-                        'monthly_amount_contribution'=>$request->monthly_amount_contribution,
-                         'employee_code'=>$request->employee_code,
-                         'effective_date_of_contribution'=>Carbon::now()
+                        'monthly_amount_contribution' => $request->monthly_amount_contribution,
+                        'employee_code' => $request->employee_code,
+                        'effective_date_of_contribution' => Carbon::now()
                     ]);
 
-                    if($newUser) {
+                    if ($newUser) {
                         return response()->json([
                             'status' => true,
                             'message' => 'Congratulations You have successfully signed up proceed to login with email and password',
@@ -128,27 +154,24 @@ class AuthController extends Controller {
                             'user' => $newUser
                         ], 201);
                     }
-
                 } else {
                     return response()->json([
                         'status' => false,
                         'message' => 'Sorry email address has already been taken'
                     ], 422);
                 }
-
             }
-
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
                 'message' => $th->getMessage()
             ], 500);
         }
-
     }
 
 
-    public function loginUser(Request $request) {
+    public function loginUser(Request $request)
+    {
         try {
             $validateUser = Validator::make(
                 $request->all(),
@@ -158,7 +181,7 @@ class AuthController extends Controller {
                 ]
             );
 
-            if($validateUser->fails()) {
+            if ($validateUser->fails()) {
                 return response()->json([
                     'status' => false,
                     'message' => 'validation error',
@@ -168,18 +191,28 @@ class AuthController extends Controller {
 
             $login_credentials = $request->only('email', 'password');
 
-            if(Auth::attempt($login_credentials)) {
+            if (Auth::attempt($login_credentials)) {
                 $user = Auth::user();
-                $token = $user->createToken('api-token')->plainTextToken;
-                return response()->json(
-                    [
-                        'status' => true,
-                        'user' => $user,
-                        'token' => $token,
-                        'message' => 'You have successfuly logged in'
-                    ],
-                    200
-                );
+                if ($user->granted_access === 0) {
+                    return response()->json(
+                        [
+                            'status' => false,
+                            'message' => 'You have not been authorised to use this application.Please contact Administrator.'
+                        ],
+                        403
+                    );
+                } else {
+                    $token = $user->createToken('api-token')->plainTextToken;
+                    return response()->json(
+                        [
+                            'status' => true,
+                            'user' => $user,
+                            'token' => $token,
+                            'message' => 'You have successfuly logged in'
+                        ],
+                        200
+                    );
+                }
             } else {
                 return response()->json(
                     [
@@ -189,18 +222,16 @@ class AuthController extends Controller {
                     200
                 );
             }
-
-
         } catch (\Throwable $th) {
             return response()->json([
                 'status' => false,
                 'message' => $th->getMessage()
             ], 500);
         }
-
     }
 
-    public function update(Request $request) {
+    public function update(Request $request)
+    {
         try {
             $userData = Validator::make(
                 $request->all(),
@@ -215,7 +246,7 @@ class AuthController extends Controller {
                 ]
             );
 
-            if($userData->fails()) {
+            if ($userData->fails()) {
                 return response()->json([
                     'status' => false,
                     'message' => 'validation error',
@@ -224,7 +255,7 @@ class AuthController extends Controller {
             }
             $user_id = $request->route('id');
             $application = User::where('id', $user_id)->first();
-            if(!$application) {
+            if (!$application) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Application id not found'
@@ -238,10 +269,10 @@ class AuthController extends Controller {
                 $application->email = $request->email;
                 $application->next_of_kin_name = $request->next_of_kin_name;
                 $application->next_of_kin_phone = $request->next_of_kin_phone;
-                $application->monthly_amount_contribution =$request->monthly_amount_contribution;
+                $application->monthly_amount_contribution = $request->monthly_amount_contribution;
                 $application->employee_code = $request->employee_code;
-                $application->employee_code =$request->employee_code;
-                if($application->save()) {
+                $application->employee_code = $request->employee_code;
+                if ($application->save()) {
                     return response()->json([
                         'status' => true,
                         'message' => 'User data has been successfully updated'
@@ -256,4 +287,47 @@ class AuthController extends Controller {
         }
     }
 
+
+    public function Permission(Request $request)
+    {
+        try {
+            $userData = Validator::make(
+                $request->all(),
+                [
+                    'granted_access' => 'required',
+                    'role' => 'required'
+                ]
+            );
+
+            if ($userData->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $userData->errors()
+                ], 401);
+            }
+            $user_id = $request->route('id');
+            $application = User::where('id', $user_id)->first();
+            if (!$application) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Application id not found'
+                ], 422);
+            } else {
+                $application->granted_access = $request->granted_access;
+                $application->role = $request->role;
+                if ($application->save()) {
+                    return response()->json([
+                        'status' => true,
+                        'message' => 'Permissions has been successfully set'
+                    ], 201);
+                }
+            }
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
 }

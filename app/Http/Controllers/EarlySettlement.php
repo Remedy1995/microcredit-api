@@ -9,6 +9,7 @@ use App\Models\EmergencyLoans;
 use App\Models\FoundersDayLoan;
 use App\Models\HappyBirthdayLoan;
 use App\Models\LoanApplication;
+use App\Models\LongTermLoan;
 use App\Models\OtherLoans;
 use App\Models\SchoolFeesLoan;
 use Illuminate\Http\Request;
@@ -58,6 +59,8 @@ class EarlySettlement extends Controller
                 ->orWhere('emergency_detail_id', $early_settlement_id)
                 ->where('type_of_loan_taken', $request->type_of_loan_taken)
                 ->orWhere('other_detail_id', $early_settlement_id)
+                ->where('type_of_loan_taken', $request->type_of_loan_taken)
+                ->orWhere('long_detail_id', $early_settlement_id)
                 ->where('type_of_loan_taken', $request->type_of_loan_taken);
         })
             ->first();
@@ -110,6 +113,11 @@ class EarlySettlement extends Controller
                 $OtherApplication->loan_settlement_status = 'IN-PROGRESS';
                 $OtherApplication->save();
             }
+         else if ($request->type_of_loan_taken === 'LONG_TERM_APPLICATION_FORM') {
+            $LongTermApplication = LongTermLoan::where(['application_name' => $request->type_of_loan_taken, 'id' => $early_settlement_id])->first();
+            $LongTermApplication->loan_settlement_status = 'IN-PROGRESS';
+            $LongTermApplication->save();
+        }
             return response()->json([
                 'status' => true,
                 'message' => 'You have successfully initiated Early Settlement for your loan applied.Wait for Approval',
@@ -122,7 +130,7 @@ class EarlySettlement extends Controller
     public function showUserLoansRefunds(Request $request)
     {
         try {
-            $userRefunds = \App\Models\EarlySettlement::where(['user_id' => $request->user()->id])->with(['LoanApplication', 'HappyBirthdayLoan', 'SchoolFeesLoan', 'CarLoan', 'FoundersDayLoan', 'ChristmasLoan', 'EasterLoan', 'EmergencyLoan', 'OtherLoan'])->orderBy('created_at', 'desc')->get();
+            $userRefunds = \App\Models\EarlySettlement::where(['user_id' => $request->user()->id])->with(['LoanApplication', 'HappyBirthdayLoan', 'SchoolFeesLoan', 'CarLoan', 'FoundersDayLoan', 'ChristmasLoan', 'EasterLoan', 'EmergencyLoan', 'OtherLoan','LongTermLoan'])->orderBy('created_at', 'desc')->get();
 
             if (count($userRefunds) < 1) {
                 return response()->json([
@@ -163,6 +171,9 @@ class EarlySettlement extends Controller
                 if ($application->OtherLoan) {
                     $filteredArray[] = $application->OtherLoan->toArray();
                 }
+                if ($application->LongTermLoan) {
+                    $filteredArray[] = $application->LongTermLoan->toArray();
+                }
             }
             //check application that has not totally been settled
             $convertObject = collect($filteredArray);
@@ -173,7 +184,7 @@ class EarlySettlement extends Controller
 
             return response()->json($checkUserRefunds->values()->all(), 200);
 
-            
+
         } catch (\Exception $error) {
             return response()->json([
                 'status' => false,
@@ -199,7 +210,7 @@ class EarlySettlement extends Controller
     public function showUserUnsettledAppliedLoans(Request $request)
     {
         try {
-            $userAppliedLoans = \App\Models\EarlySettlement::where(['user_id' => $request->user()->id])->with(['LoanApplication', 'HappyBirthdayLoan', 'SchoolFeesLoan', 'CarLoan', 'FoundersDayLoan', 'ChristmasLoan', 'EasterLoan', 'EmergencyLoan', 'OtherLoan'])->orderBy('created_at', 'desc')->get();
+            $userAppliedLoans = \App\Models\EarlySettlement::where(['user_id' => $request->user()->id])->with(['LoanApplication', 'HappyBirthdayLoan', 'SchoolFeesLoan', 'CarLoan', 'FoundersDayLoan', 'ChristmasLoan', 'EasterLoan', 'EmergencyLoan', 'OtherLoan','LongTermLoan'])->orderBy('created_at', 'desc')->get();
 
             if (count($userAppliedLoans) < 1) {
                 return response()->json([
@@ -239,6 +250,9 @@ class EarlySettlement extends Controller
                 }
                 if ($application->OtherLoan) {
                     $filteredArray[] = $application->OtherLoan->toArray();
+                }
+                if ($application->LongTermLoan) {
+                    $filteredArray[] = $application->LongTermLoan->toArray();
                 }
             }
             //check application that has not totally been settled
@@ -992,6 +1006,83 @@ class EarlySettlement extends Controller
     }
 
 
+    public function ApproveEarlyStatementFormForLongTermLoan(Request $request)
+    {
+        try {
+            $LongTermData = Validator::make(
+                $request->all(),
+                [
+                    'application_status' => 'required',
+                    'approval_status' => 'required',
+                    'amount_paid' => 'required'
+                ]
+            );
 
+            if ($LongTermData->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $LongTermData->errors()
+                ], 401);
+            }
+
+
+            $longterm_id = $request->route('long_term');
+            $application_status = $request->application_status;
+            $approval_status = $request->approval_status;
+            $comment = $request->comment;
+            $effective_date_of_payment = $request->effective_date_of_payment;
+            $amount_paid = $request->amount_paid;
+
+
+            $application = \App\Models\LongTermLoan::where('id', $longterm_id)->first();
+
+            if (!$application) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Application id not found'
+                ], 422);
+            } else {
+                $application->application_status = $application_status;
+                $application->approval_status = $approval_status;
+                $application->comment = $comment;
+                $application->effective_date_of_payment = $effective_date_of_payment;
+                //after early Settlement for happy birthday application has been approved let update these data in our database
+                //'loan_settlement_status',
+                //'total_loan_amount_payable',
+                // 'settled_loan_amount',
+                // 'oustanding_loan_balance',
+                //  'amount_paid'
+                //settled loan amount will be computations of cash amounts to offset applied loan
+
+                if ($application_status === 'APPROVED') {
+                    $application->settled_loan_amount = $application->settled_loan_amount + $amount_paid;
+                    $application->oustanding_loan_balance = $application->total_loan_amount_payable - $application->settled_loan_amount <= 0 ? 0.00 : $application->total_loan_amount_payable - $application->settled_loan_amount;
+                    $application->loan_settlement_status = $application->oustanding_loan_balance <= 0 ? 'COMPLETED' : 'NOT-COMPLETED';
+                    $application->refund_amount = ($application->settled_loan_amount > $application->total_loan_amount_payable) ? $application->settled_loan_amount - $application->total_loan_amount_payable : $application->refund_amount;
+                    if ($application->save()) {
+                          //record this trnasaction as part of loan repayments
+                          $loanRepayments = \App\Models\LoanRepayments::create([
+                            'employee_code' => $application->w_f_no,
+                            'Principal_amount' => $application->principal_amount,
+                            'monthly_repayment_amount' => $application->monthly_repayment_amount,
+                            'type_of_loan_taken' => $application->application_name,
+                            'loan_payment_type' => 'BANK',
+                            'amount_paid'=> $amount_paid
+                        ]);
+                        return response()->json([
+                            'status' => true,
+                            'message' => 'Long Term Loan Application has been successfully closed'
+                        ], 200);
+                    }
+                }
+            }
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'message' => $th->getMessage()
+            ], 500);
+        }
+    }
 
 }

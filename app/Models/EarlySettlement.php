@@ -20,6 +20,7 @@ class EarlySettlement extends Model
         'easter_detail_id',
         'emergency_detail_id',
         'other_detail_id',
+        'long_detail_id',
         'type_of_loan_taken'
     ];
 
@@ -69,5 +70,9 @@ class EarlySettlement extends Model
 
     public function OtherLoan(){
         return $this->belongsTo(OtherLoans::class,'other_detail_id','id');
+    }
+
+    public function LongTermLoan(){
+        return $this->belongsTo(LongTermLoan::class,'long_detail_id','id');
     }
 }

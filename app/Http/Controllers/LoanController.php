@@ -7,6 +7,7 @@ use App\Models\EarlySettlement;
 use App\Models\LoanApplication;
 use App\Models\TotalLoansProfit;
 use App\Utilities\AccruedInterests;
+use App\Utilities\FormsGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -72,6 +73,15 @@ class LoanController extends Controller
                     ], 401);
                 }
 
+
+                $checkApplicationStatus = FormsGuard::CheckExistingApplicationInProgress($request->user()->id,'LOAN_APPLICATION_FORM');
+
+                if($checkApplicationStatus){
+                    return response()->json([
+                        'status'=> false,
+                        'message'=>'Sorry you cannot create another form you already have a pending loan form in progress'
+                    ],400);
+                }
                 ///return $request->all();
                 $application = \App\Models\ApplicationTypes::where('application_type_slug', 'LOAN_APPLICATION_FORM')->first();
                 $LoanApplication = LoanApplication::create([

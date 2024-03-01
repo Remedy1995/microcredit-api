@@ -9,42 +9,47 @@ use App\Utilities\FormsGuard;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
-class ChristmasLoan extends Controller
-{
 
-    public function show(Request $request)
-    {
-        $christmas_id = $request->route('christmas_loan');
-        $application = \App\Models\EarlySettlement::select('early_settlement_form.*', 'christmas_loan.*')
-        ->join('christmas_loan', 'christmas_loan.id', '=', 'early_settlement_form.christmas_detail_id')
-        ->where('christmas_loan.id', $christmas_id)
-        ->get();
-       // $application = \App\Models\ChristmasLoan::with('earlySettlement')->where('id', $christmas_id)->first();
-        if (!$application) {
-            return response()->json([
-                'status' => false,
-                'data' => [],
-                'message' => 'No data found'
-            ], 404);
-        }
-        return response()->json([
-            'status' => true,
-            'data' => $application,
-            'message' => 'Successful'
-        ], 200);
-    }
+class LongTermLoan extends Controller
+{
+    //
+    // public function show(Request $request)
+    // {
+
+    //     $longTermid = $request->route('long_term');
+
+    //     // $application = \App\Models\CarLoans::with('earlySettlement')->where('id', $carLoanid)->first();
+    //     $application = \App\Models\EarlySettlement::select('early_settlement_form.*', 'long_term.*')
+    //         ->join('long_term', 'long_term.id', '=', 'early_settlement_form.long_detail_id')
+    //         ->where('long_term.id', $longTermid)
+    //         ->get();
+    //     if (!$application) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'data' => [],
+    //             'message' => 'No data found'
+    //         ], 404);
+    //     }
+    //     return response()->json([
+    //         'status' => true,
+    //         'data' => $application,
+    //         'message' => 'Successful'
+    //     ], 200);
+    // }
     //
     public function index(Request $request)
     {
-        return \App\Models\ChristmasLoan::all();
+        return \App\Models\LongTermLoan::all();
     }
 
 
 
     public function store(Request $request)
     {
+
+
         try {
-            $ChristmasLoanData = Validator::make(
+            $longLoanData = Validator::make(
                 $request->all(),
                 [
                     'principal_amount' => 'required',
@@ -58,15 +63,16 @@ class ChristmasLoan extends Controller
                 ]
             );
 
-            if ($ChristmasLoanData->fails()) {
+            if ($longLoanData->fails()) {
                 return response()->json([
                     'status' => false,
                     'message' => 'validation error',
-                    'errors' => $ChristmasLoanData->errors()
+                    'errors' => $longLoanData->errors()
                 ], 401);
             }
 
-            $checkApplicationStatus = FormsGuard::CheckExistingApplicationInProgress($request->user()->id,'CHRISTMAS_APPLICATION_FORM');
+            $checkApplicationStatus = FormsGuard::CheckExistingApplicationInProgress($request->user()->id,'LONG_TERM_APPLICATION_FORM');
+           // return $checkApplicationStatus;
 
             if($checkApplicationStatus){
                 return response()->json([
@@ -75,10 +81,10 @@ class ChristmasLoan extends Controller
                 ],400);
             }
             ///return $request->all();
-            $application = \App\Models\ApplicationTypes::where('application_type_slug', 'CHRISTMAS_APPLICATION_FORM')->first();
-            $ChristmasLoan = \App\Models\ChristmasLoan::create([
+            $application = \App\Models\ApplicationTypes::where('application_type_slug', 'LONG_TERM_APPLICATION_FORM')->first();
+            $LongTerm = \App\Models\LongTermLoan::create([
                 'application_id' => $application->id,
-                'application_name' => 'CHRISTMAS_APPLICATION_FORM',
+                'application_name' => 'LONG_TERM_APPLICATION_FORM',
                 'principal_amount' => $request->principal_amount,
                 'principal_interest' => $request->principal_interest,
                 'monthly_repayment_amount' => $request->monthly_repayment_amount,
@@ -98,24 +104,24 @@ class ChristmasLoan extends Controller
 
 
 
-            if ($ChristmasLoan) {
+            if ($LongTerm) {
                 $applicationDetails = ApplicationDetails::create([
                     'user_id' => $request->user()->id,
-                    'christmas_detail_id' => $ChristmasLoan->id,
+                    'long_detail_id' => $LongTerm->id,
                 ]);
 
                 if ($applicationDetails) {
                     //create a record for early settlement form
                     $earlySettleLoan = EarlySettlement::create([
                         'user_id' => $request->user()->id,
-                        'christmas_detail_id' => $ChristmasLoan->id,
-                        'type_of_loan_taken' => 'CHRISTMAS_APPLICATION_FORM'
+                        'long_detail_id' => $LongTerm->id,
+                        'type_of_loan_taken' => 'LONG_TERM_APPLICATION_FORM'
                     ]);
 
                     if ($earlySettleLoan) {
                         return response()->json([
                             'status' => true,
-                            'message' => 'Christmas Loan Application has been created successfully'
+                            'message' => 'Long Term Application has been created successfully'
                         ], 201);
                     }
                 }
@@ -134,7 +140,7 @@ class ChristmasLoan extends Controller
     public function update(Request $request)
     {
         try {
-            $ChristmasData = Validator::make(
+            $LongTermLoanData = Validator::make(
                 $request->all(),
                 [
                     'application_status' => 'required',
@@ -142,23 +148,23 @@ class ChristmasLoan extends Controller
                 ]
             );
 
-            if ($ChristmasData->fails()) {
+            if ($LongTermLoanData->fails()) {
                 return response()->json([
                     'status' => false,
                     'message' => 'validation error',
-                    'errors' => $ChristmasData->errors()
+                    'errors' => $LongTermLoanData->errors()
                 ], 401);
             }
 
 
-            $christmas_id = $request->route('christmas_loan');
+            $longTermLoan_id = $request->route('long_term');
             $application_status = $request->application_status;
             $approval_status = $request->approval_status;
             $comment = $request->comment;
             $effective_date_of_payment = $request->effective_date_of_payment;
 
 
-            $application = \App\Models\ChristmasLoan::where('id', $christmas_id)->first();
+            $application = \App\Models\LongTermLoan::where('id',$longTermLoan_id)->first();
 
             if (!$application) {
                 return response()->json([
@@ -178,7 +184,7 @@ class ChristmasLoan extends Controller
 
                     return response()->json([
                         'status' => true,
-                        'message' => 'Christmas loan Application has been successfully closed'
+                        'message' => 'Long Term Application has been successfully closed'
                     ], 200);
                 }
             }

@@ -20,7 +20,7 @@ class AllApprovedUnsettledLoans extends Controller
                 'schoolfeesloan' => function ($query) {
                     $query->where(['approval_status' => "COMPLETED"]);
                 }
-            ])->orderBy('created_at','desc')->get();
+            ])->orderBy('created_at', 'desc')->get();
 
             $applications = $applications->filter(function ($application) {
                 return $application->schoolfeesloan !== null;
