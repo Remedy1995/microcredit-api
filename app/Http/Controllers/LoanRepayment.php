@@ -23,13 +23,40 @@ use stdClass;
 class LoanRepayment extends Controller
 {
 
+
+
+
+
+
+
+
+
+    public function showLoanRepaymentById(Request $request)
+    {
+        $loanrepayment_id = $request->route('id');
+
+        $application =  \App\Models\LoanRepayments::where('id', $loanrepayment_id)->first();
+
+        if (!$application) {
+            return response()->json([
+                'status' => false,
+                'data' => [],
+                'message' => 'No data found'
+            ], 404);
+        }
+        return response()->json([
+            'status' => true,
+            'data' => $application,
+            'message' => 'Successful'
+        ], 200);
+    }
     //
 
     public function getUserLoanMonthlyRepayments(Request $request)
     {
         $employee_code = $request->employee_code;
         try {
-            $userLoanRepayments = \App\Models\LoanRepayments::where('employee_code', $employee_code)->orderBy('date', 'desc')->get();
+            $userLoanRepayments = \App\Models\LoanRepayments::where('employee_code', $request->user()->employee_code)->orderBy('updated_at', 'desc')->get();
             if (count($userLoanRepayments) < 1) {
                 return response()->json(
                     [

@@ -41,7 +41,7 @@ class AuthController extends Controller
     public function ApprovedUsers()
     {
         try {
-            $users = User::where('granted_access', 1)->get();
+            $users = User::where('granted_access', 1)->orderBy('created_at','desc')->get();
             return response()->json($users, 200);
         } catch (Exception $error) {
             return response()->json([

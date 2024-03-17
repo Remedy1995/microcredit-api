@@ -8,6 +8,7 @@ use App\Models\TotalCumulativeSavings;
 use App\Utilities\RecordTransactions;
 use Carbon\Carbon;
 use App\Imports\ExcelImportClass;
+use App\Models\MonthlyContributions as ModelsMonthlyContributions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
@@ -15,6 +16,31 @@ use App\Utilities\AccruedInterests;
 
 class MonthlyContributions extends Controller
 {
+
+
+
+    public function showContributionById(Request $request)
+    {
+
+        $contribution_id = $request->route('id');
+
+        $application =  \App\Models\MonthlyContributions::where('id', $contribution_id)->first();
+
+        if (!$application) {
+            return response()->json([
+                'status' => false,
+                'data' => [],
+                'message' => 'No data found'
+            ], 404);
+        }
+        return response()->json([
+            'status' => true,
+            'data' => $application,
+            'message' => 'Successful'
+        ], 200);
+    }
+
+
     //
 
     public function getUserContributions(Request $request)
@@ -62,7 +88,7 @@ class MonthlyContributions extends Controller
             $checkMonths = \App\Models\MonthlyContributions::select('created_at')->get();
             //check if we have already uploaded monthly contributions for the month
             $hasUploadedContributions = RecordTransactions::CheckPaidContributions($checkMonths);
-            //return $hasUploadedContributions;
+           // return $hasUploadedContributions;
             if ($hasUploadedContributions === 1) {
                 return response()->json([
                     'status' => false,
