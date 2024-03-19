@@ -87,8 +87,8 @@ class RecordTransactions
         $currentMonthYear[] = $splitCurrentYear;
         $currentMonthYear[] = $splitCurrentMonth;
         //simulate monthYear
-        $currentMonthYear[0] = '2024';
-        $currentMonthYear[1] = '1';
+       // $currentMonthYear[0] = '2024';
+       // $currentMonthYear[1] = '1';
         return $currentMonthYear;
         //return an array containing the year as the first item and month as second item
     }

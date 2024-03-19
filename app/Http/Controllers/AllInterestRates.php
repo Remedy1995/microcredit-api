@@ -3,12 +3,33 @@
 namespace App\Http\Controllers;
 
 use App\Models\CurrentInterestRates;
+use Exception;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 
 class AllInterestRates extends Controller
 {
     //
+
+    public function index(Request $request)
+    {
+
+        try {
+            $interestRates = CurrentInterestRates::all();
+            return response()->json([
+                'status' => true,
+                'data' => $interestRates
+            ], 200);
+        } catch (Exception $error) {
+            return response()->json([
+                'status' => false,
+                'message' => $error->getMessage()
+            ], 500);
+        }
+    }
+
+
+
 
     public function store(Request $request)
     {
@@ -56,15 +77,11 @@ class AllInterestRates extends Controller
                     $findInterestRateForApplication->interest_duration = $request->interest_duration;
                     $findInterestRateForApplication->interest_rates = $request->interest_rates;
                     $findInterestRateForApplication->save();
-
-
                 }
                 return response()->json([
                     'status' => true,
                     'message' => 'Interest Rate for ' . $AllInterestsRate->application_type_name . ' has been set successfully'
                 ], 201);
-
-
             }
         } catch (\Throwable $th) {
             return response()->json([
