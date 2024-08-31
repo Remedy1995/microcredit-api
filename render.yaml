@@ -1,9 +1,12 @@
 services:
   - type: web
-    name: my-laravel-app
+    name: laravel-app
     env: docker
-    buildCommand: docker build -t my-laravel-app:latest .
-    startCommand: docker run -p 80:80 my-laravel-app:latest
     plan: free
-    regions:
-      - oregon
+     repo: https://github.com/Remedy1995/microcredit-api.git
+    dockerfilePath: ./Dockerfile
+    buildCommand: ""
+    startCommand: ""
+    envVars:
+      - key: ENV_VAR_NAME
+        value: ENV_VAR_VALUE
