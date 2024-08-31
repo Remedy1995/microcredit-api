@@ -1,35 +1,35 @@
+# Use an official PHP runtime as a parent image
 FROM php:8.2-fpm
 
-# Install system dependencies
+# Set working directory
+WORKDIR /var/www/html
+
+# Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
     nginx \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
     libpng-dev \
     libzip-dev \
-    libicu-dev \
-    libxml2-dev \
     zip \
-    libonig-dev \
-    unzip
+    unzip 
+    
+RUN docker-php-ext-install pdo mbstring exif pcntl bcmath zip
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath zip
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Clean up
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Copy application code
+# Copy the existing application directory to the container
 COPY . /var/www/html
 
-# Copy Nginx configuration
+# Copy Nginx configuration file
 COPY ./nginx.conf /etc/nginx/nginx.conf
 
-# Set permissions
+# Set correct permissions for Laravel
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Expose ports
-EXPOSE 80
+# Expose port 8000
+EXPOSE 8000
 
 # Start Nginx and PHP-FPM
-CMD ["sh", "-c", "service php7.4-fpm start && nginx -g 'daemon off;'"]
+CMD service nginx start && php-fpm
