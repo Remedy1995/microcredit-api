@@ -1,37 +1,36 @@
-# Use the official PHP image as a base
+# Use an official PHP runtime as a parent image
 FROM php:8.2-fpm
 
-# Install system dependencies
+# Set working directory
+WORKDIR /var/www/html
+
+# Install system dependencies and PHP extensions
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpng-dev \
-    libjpeg62-turbo-dev \
+    nginx \
     libfreetype6-dev \
-    libonig-dev \
-    libxml2-dev \
+    libjpeg62-turbo-dev \
+    libpng-dev \
+    libzip-dev \
     zip \
     unzip \
-    git \
-    curl
-
-# Install PHP extensions
-RUN docker-php-ext-install pdo mbstring exif pcntl bcmath gd
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) gd \
+    && docker-php-ext-install pdo mbstring exif pcntl bcmath gd zip
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
-WORKDIR /var/www
-
-# Copy existing application directory contents
-COPY . .
-
-# Install Laravel dependencies
-RUN composer install --optimize-autoloader --no-dev
-
 # Copy existing application directory permissions
-COPY . .
+COPY . /var/www/html
 
-# Expose port 9000 and start php-fpm server
-EXPOSE 9000
-CMD ["php-fpm"]
+# Copy Nginx configuration file
+COPY ./nginx.conf /etc/nginx/nginx.conf
+
+# Set correct permissions for Laravel
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+# Expose port 8000
+EXPOSE 8000
+
+# Start Nginx and PHP-FPM
+CMD service nginx start && php-fpm
