@@ -3,7 +3,6 @@ FROM php:8.2-fpm
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     nginx \
-    supervisor \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
     libpng-dev \
@@ -12,18 +11,26 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     libonig-dev \
-    unzip
+    unzip \
+    git \
+    curl \
+    libgd-dev
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath zip
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath zip gd
 
-RUN composer install --no-dev --optimize-autoloader
+# Install Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Clean up
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+# Set environment variable to allow Composer to run as root
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Copy application code
 COPY . /var/www/html
+
+# Install PHP dependencies using Composer
+RUN composer install --no-dev --optimize-autoloader
 
 # Copy Nginx configuration
 COPY ./nginx.conf /etc/nginx/nginx.conf
@@ -31,11 +38,8 @@ COPY ./nginx.conf /etc/nginx/nginx.conf
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Copy Supervisor configuration
-COPY ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
 # Expose port 80
 EXPOSE 80
 
-# Start Supervisor
-CMD ["/usr/bin/supervisord"]
+# Start PHP-FPM and Nginx
+CMD ["sh", "-c", "php-fpm && nginx -g 'daemon off;'"]
