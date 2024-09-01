@@ -3,6 +3,7 @@ FROM php:8.2-fpm
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     nginx \
+    supervisor \
     libfreetype6-dev \
     libjpeg62-turbo-dev \
     libpng-dev \
@@ -28,8 +29,11 @@ COPY ./nginx.conf /etc/nginx/nginx.conf
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
+# Copy Supervisor configuration
+COPY ./supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
 # Expose port 80
 EXPOSE 80
 
-# Start PHP-FPM and Nginx
-CMD ["sh", "-c", "php-fpm && nginx -g 'daemon off;'"]
+# Start Supervisor
+CMD ["/usr/bin/supervisord"]
