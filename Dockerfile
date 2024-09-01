@@ -14,7 +14,8 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git \
     curl \
-    libgd-dev
+    libgd-dev \
+    supervisor
 
 # Install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -41,5 +42,8 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 # Expose port 80
 EXPOSE 80
 
-# Start PHP-FPM and Nginx
-CMD ["sh", "-c", "php-fpm && nginx -g 'daemon off;'"]
+# Copy supervisord configuration
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Start supervisord, which will manage PHP-FPM and Nginx
+CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
