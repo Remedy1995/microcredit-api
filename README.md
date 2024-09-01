@@ -17,3 +17,5 @@ type this in the factory class
         LoanApplication::factory(10)->create();
 
 and type php artisan migrate# microcredit-api simple done
+
+Done with the Application we are left with testing the application 
