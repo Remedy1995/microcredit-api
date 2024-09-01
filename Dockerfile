@@ -28,8 +28,8 @@ COPY ./nginx.conf /etc/nginx/nginx.conf
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Expose ports
+# Expose port 80
 EXPOSE 80
 
-# Start Nginx and PHP-FPM
-CMD ["sh", "-c", "service php7.4-fpm start && nginx -g 'daemon off;'"]
+# Start PHP-FPM and Nginx
+CMD ["sh", "-c", "php-fpm && nginx -g 'daemon off;'"]
