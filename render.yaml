@@ -4,7 +4,7 @@ services:
     env: docker
     plan: free
      repo: https://github.com/Remedy1995/microcredit-api.git
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: Dockerfile
     buildCommand: ""
     startCommand: ""
     envVars:
