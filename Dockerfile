@@ -33,6 +33,9 @@ COPY . /var/www/html
 # Install PHP dependencies using Composer
 RUN composer install --no-dev --optimize-autoloader
 
+# Run database migrations
+RUN php artisan migrate --force
+
 # Copy Nginx configuration
 COPY ./nginx.conf /etc/nginx/nginx.conf
 
