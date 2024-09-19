@@ -32,13 +32,14 @@ class RecordTransactions
         $currentMonthYear[] = $splitCurrentMonth;
         $currentMonthYear[] = $splitCurrentYear;
         $joinCurrentMonthYear = implode("-", $currentMonthYear);
+        //return $joinCurrentMonthYear;
         //simulate new monthYear
         //$joinCurrentMonthYear = '12-2025';
         $allPaidDates = [];
         foreach ($checkMonths as $months) {
             $parseMonth = Carbon::parse($months->created_at)->month;
             $parseYear = Carbon::parse($months->created_at)->year;
-            $finalMonth = strlen($parseMonth < 2) ? '0' . $parseMonth : $parseMonth;
+            $finalMonth = str_pad($parseMonth, 2, '0', STR_PAD_LEFT);
             $allPaidDates[] = $finalMonth . '-' . $parseYear;
         }
         $checkPaidDates = in_array($joinCurrentMonthYear, $allPaidDates);
@@ -87,8 +88,8 @@ class RecordTransactions
         $currentMonthYear[] = $splitCurrentYear;
         $currentMonthYear[] = $splitCurrentMonth;
         //simulate monthYear
-       // $currentMonthYear[0] = '2024';
-       // $currentMonthYear[1] = '1';
+        // $currentMonthYear[0] = '2024';
+        // $currentMonthYear[1] = '1';
         return $currentMonthYear;
         //return an array containing the year as the first item and month as second item
     }
@@ -113,7 +114,7 @@ class RecordTransactions
         // Extract columns "employee_code" and "monthly_amount_contribution"
         $processedData = array_map(function ($row) {
             return [
-                'employee_code' => $row[0]?? null,
+                'employee_code' => $row[0] ?? null,
                 // 'Principal_amount' => $row[2],
                 'monthly_amount_contribution' => $row[2] ?? null
             ];
@@ -147,7 +148,7 @@ class RecordTransactions
         $processedData = array_map(function ($row) {
             return [
                 'employee_code' => $row[0] ?? null,
-                'Principal_amount' => $row[2] ?? null ,
+                'Principal_amount' => $row[2] ?? null,
                 'monthly_repayment_amount' => $row[3] ?? null,
             ];
         }, $data);
@@ -157,8 +158,9 @@ class RecordTransactions
         return json_encode($processedData, JSON_PRETTY_PRINT);
     }
 
-//this function checks if there is a duplicates in the excel sheet data
-    public static function CheckDuplicates($employeeCodeArray,$employeeObject){
+    //this function checks if there is a duplicates in the excel sheet data
+    public static function CheckDuplicates($employeeCodeArray, $employeeObject)
+    {
         foreach ($employeeCodeArray as $key => $value) {
             if (!isset($employeeObject[$value])) {
                 $employeeObject[$value] = 1;
@@ -166,8 +168,8 @@ class RecordTransactions
                 $employeeObject[$value]++;
             }
         }
-             //now loop thorugh employee object and return the employee who appears more than 1
-             //that is has been assigned 2 or more
+        //now loop thorugh employee object and return the employee who appears more than 1
+        //that is has been assigned 2 or more
         foreach ($employeeObject as $key => $value) {
             if ($value > 1) {
                 return $key;

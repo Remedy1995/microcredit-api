@@ -87,14 +87,13 @@ class MonthlyContributions extends Controller
 
             $checkMonths = \App\Models\MonthlyContributions::select('created_at')->get();
             //check if we have already uploaded monthly contributions for the month
-            $hasUploadedContributions = RecordTransactions::CheckPaidContributions($checkMonths);
-           // return $hasUploadedContributions;
-            if ($hasUploadedContributions === 1) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Sorry you have already uploaded monthly contributions for the month'
-                ], 405);
-            }
+            // $hasUploadedContributions = RecordTransactions::CheckPaidContributions($checkMonths);
+            // if ($hasUploadedContributions) {
+            //     return response()->json([
+            //         'status' => false,
+            //         'message' => 'Sorry you have already uploaded monthly contributions for the month'
+            //     ], 405);
+            // }
 
             $data = $data[0]->toArray();
 
