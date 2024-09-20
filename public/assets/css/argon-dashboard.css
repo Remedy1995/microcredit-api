@@ -26985,7 +26985,9 @@ pre[class*="language-"] {
 .close-menus {
   display: none;
 }
-
+.text-nowrap{
+  font-size: 12px;
+}
 .text-danger-a{
   color:#e74c3c;
 }

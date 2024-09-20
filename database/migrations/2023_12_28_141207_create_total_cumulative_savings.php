@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('total_cumulative_savings', function (Blueprint $table) {
             $table->id();
-            $table->doube('total_cumulative_savings',15,2)->change();
+            $table->double('total_cumulative_savings',15,2)->change();
             $table->timestamps();
         });
     }
