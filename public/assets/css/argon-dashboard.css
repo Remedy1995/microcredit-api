@@ -26986,7 +26986,23 @@ pre[class*="language-"] {
   display: none;
 }
 
+.text-danger-a{
+  color:#e74c3c;
+}
+span.text-danger-a:hover{
+  background-color:#5e72e4;
+  transition: all 0.3s ease-in-out;
+  padding: 5px;
+  color: white;
+  
+}
+
 @media (max-width: 768px) {
+
+  div.avatar.avatar-xl{
+    display: none;
+  }
+
   .navbar-vertical.navbar-expand-xs.fixed-start {
     display: none;
   }
