@@ -12,31 +12,31 @@ use Illuminate\Support\Facades\Validator;
 
 class LongTermLoan extends Controller
 {
-    //
-    // public function show(Request $request)
-    // {
+   
+    public function show(Request $request)
+    {
 
-    //     $longTermid = $request->route('long_term');
+        $longTermid = $request->route('long_term');
 
-    //     // $application = \App\Models\CarLoans::with('earlySettlement')->where('id', $carLoanid)->first();
-    //     $application = \App\Models\EarlySettlement::select('early_settlement_form.*', 'long_term.*')
-    //         ->join('long_term', 'long_term.id', '=', 'early_settlement_form.long_detail_id')
-    //         ->where('long_term.id', $longTermid)
-    //         ->get();
-    //     if (!$application) {
-    //         return response()->json([
-    //             'status' => false,
-    //             'data' => [],
-    //             'message' => 'No data found'
-    //         ], 404);
-    //     }
-    //     return response()->json([
-    //         'status' => true,
-    //         'data' => $application,
-    //         'message' => 'Successful'
-    //     ], 200);
-    // }
-    //
+        // $application = \App\Models\CarLoans::with('earlySettlement')->where('id', $carLoanid)->first();
+        $application = \App\Models\EarlySettlement::select('early_settlement_form.*', 'long_term.*')
+            ->join('long_term', 'long_term.id', '=', 'early_settlement_form.long_detail_id')
+            ->where('long_term.id', $longTermid)
+            ->get();
+        if (!$application) {
+            return response()->json([
+                'status' => false,
+                'data' => [],
+                'message' => 'No data found'
+            ], 404);
+        }
+        return response()->json([
+            'status' => true,
+            'data' => $application,
+            'message' => 'Successful'
+        ], 200);
+    }
+
     public function index(Request $request)
     {
         return \App\Models\LongTermLoan::all();
