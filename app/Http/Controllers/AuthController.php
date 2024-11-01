@@ -330,4 +330,63 @@ class AuthController extends Controller
             ], 500);
         }
     }
+
+
+    public function resetPassword(Request $request){
+        $validator = Validator::make($request->all(),[
+            'email_address'=>'required'
+        ]);
+
+
+        if($validator->fails()){
+            return response()->json([
+               'status'=>false,
+                'message'=> $validator->errors()
+            ],422);
+        }
+
+
+        $email_address = $request->email_address;
+
+        try {
+            $findUser = User::where('email',$email_address)->first();
+             $password = $request->password;
+            $findUser->password = Hash::make($password);
+            $findUser->save();
+            return $findUser;
+            return response()->json([
+                'status' => true,
+                'message' => 'Done'
+            ], 201);
+        }
+        catch(Exception $error){
+            return response()->json([
+                'status' => false,
+                'message' => $error->getMessage()
+            ], 500);
+        }
+
+    }
+
+
+    public function updateBulkPassword(Request $request){
+        set_time_limit(200);
+        $users = User::select('email')->get();
+        $users =array_chunk(json_decode($users,true),100);
+
+        foreach($users[0] as $user){
+
+            $updateEmail = User::where('email',$user["email"])->first();
+            //hash password
+            $userPassword = Hash::make('12345678');
+            $updateEmail->password = $userPassword;
+            $updateEmail->save();
+        }
+        return response([
+            'status'=> true,
+             'message'=> 'Updated completed'
+        ],201);
+    }
 }
+
+

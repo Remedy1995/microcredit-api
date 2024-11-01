@@ -110,6 +110,8 @@ Route::prefix('auth')->group(function () {
     Route::get('/get-connection', [TestDb::class, 'TestDbConnection']);
     Route::post('/login', [AuthController::class, 'loginUser'])->name('login');
     Route::post('/user', [AuthController::class, 'store']);
+    Route::post('/reset-password',[AuthController::class,'resetPassword'])->name('reset-password');
+    Route::post('/reset-bulk-password',[AuthController::class,'updateBulkPassword'])->name('reset-bulk-password');
     Route::get('/all-pending-users', [AuthController::class, 'PendingUsers'])->middleware('auth:sanctum');
     Route::get('/all-approved-users', [AuthController::class, 'ApprovedUsers'])->middleware('auth:sanctum');
     Route::get('/user/{id}', [AuthController::class, 'show'])->middleware('auth:sanctum');

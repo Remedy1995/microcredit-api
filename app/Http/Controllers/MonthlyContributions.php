@@ -73,6 +73,7 @@ class MonthlyContributions extends Controller
 
     public function monthlyContributions(Request $request)
     {
+        set_time_limit(300);
         try {
 
             $request->validate(
@@ -96,23 +97,22 @@ class MonthlyContributions extends Controller
             // }
 
             $data = $data[0]->toArray();
-
             // Remove rows with all null values and where "monthly_amount_contribution" is not an integer
+             //return $data;
             $excelData = RecordTransactions::FormatExcelData($data);
-            $convertData = json_decode($excelData, true);
-            //return ($convertData);
             $myArray = [];
-            foreach ($convertData as $row) {
-                //return $data;
+            $convertData = array_chunk($excelData,100);
+
+            foreach ($convertData[0] as $row) {
+
                 $employeeCode = $row['employee_code'] ?? null;
                 $employeeAmount = $row['monthly_amount_contribution'] ?? null;
-
                 array_push($myArray, $employeeAmount);
                 //let compute total contributions received
-
                 $total_contributions = array_reduce($myArray, function ($mycarry, $item) {
                     return $mycarry + $item;
                 }, 0);
+
 
                 //return $employeeCode;
                 if (!$employeeCode || !$employeeAmount) {
@@ -132,7 +132,7 @@ class MonthlyContributions extends Controller
 
                 //after monthly contributions has been uploaded
                 //let record principal amount and employee code for each employee
-                foreach ($convertData as $row) {
+                foreach ($convertData[0] as $row) {
                     $employee_code = $row['employee_code'] ?? null;
                     $employeeAmount = floatval($row['monthly_amount_contribution']);
                     //$interestRate = 7.5;

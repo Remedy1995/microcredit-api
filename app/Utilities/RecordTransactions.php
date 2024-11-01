@@ -97,6 +97,7 @@ class RecordTransactions
 
     public  static function FormatExcelData($data)
     {
+        set_time_limit(300);
         $data = array_filter($data, function ($row) {
             return !empty(array_filter($row, function ($cell) {
                 return !is_null($cell) && is_numeric($cell);
@@ -105,24 +106,25 @@ class RecordTransactions
 
         // Check if the last row contains a null value
         $lastRow = end($data);
-
-        if (in_array('Total :', $lastRow)) {
+        if (in_array('Akatua by S.O.F.T.',$lastRow)) {
             // Remove the last row if it contains a null value
             array_pop($data);
         }
-
+        array_pop($data);
+        //pop the data again
         // Extract columns "employee_code" and "monthly_amount_contribution"
         $processedData = array_map(function ($row) {
             return [
-                'employee_code' => $row[0] ?? null,
+                'employee_code' => $row['employee_code'] ?? null,
                 // 'Principal_amount' => $row[2],
-                'monthly_amount_contribution' => $row[2] ?? null
+                'monthly_amount_contribution' => $row['amount'] ?? null
             ];
         }, $data);
         // Remove the first row (headers)
         // $headers = array_shift($processedData);
         // Output the processed data
-        return json_encode($processedData, JSON_PRETTY_PRINT);
+        return $processedData;
+        //return json_encode($processedData, JSON_PRETTY_PRINT);
     }
 
 
