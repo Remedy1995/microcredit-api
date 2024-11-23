@@ -6,6 +6,7 @@ namespace App\Utilities;
 use App\Models\TotalCumulativeSavings;
 use App\Models\TotalLoansProfit;
 use Carbon\Carbon;
+use Exception;
 
 class RecordTransactions
 {
@@ -106,7 +107,7 @@ class RecordTransactions
 
         // Check if the last row contains a null value
         $lastRow = end($data);
-        if (in_array('Akatua by S.O.F.T.',$lastRow)) {
+        if (in_array('Akatua by S.O.F.T.', $lastRow)) {
             // Remove the last row if it contains a null value
             array_pop($data);
         }
@@ -132,33 +133,58 @@ class RecordTransactions
 
     public  static function FormatExcelLoanData($data)
     {
-        $data = array_filter($data, function ($row) {
-            return !empty(array_filter($row, function ($cell) {
-                return !is_null($cell) && is_numeric($cell);
-            }));
-        });
+
+        // $data = array_filter($data, function ($row) {
+        //     return !empty(array_filter($row, function ($cell) {
+        //         return !is_null($cell) && is_numeric($cell);
+        //     }));
+        // });
 
         // Check if the last row contains a null value
-        $lastRow = end($data);
+        //  $lastRow = end($data);
 
-        if (in_array('Total :', $lastRow)) {
-            // Remove the last row if it contains a null value
-            array_pop($data);
-        }
+        //   if (in_array('Total :', $lastRow)) {
+        // Remove the last row if it contains a null value
+        //    array_pop($data);
+        //   }
 
         // Extract columns "employee_code" and "monthly_amount_contribution"
+          try {
         $processedData = array_map(function ($row) {
-            return [
-                'employee_code' => $row[0] ?? null,
-                'Principal_amount' => $row[2] ?? null,
-                'monthly_repayment_amount' => $row[3] ?? null,
-            ];
+            if (
+                !is_null(isset($row['employee_code']) && $row['employee_code'])
+                && !is_null(isset($row['principal']) && $row['principal'])
+                && !is_null(isset($row['monthly_repayment'])) && ($row['monthly_repayment'])
+            ) {
+                return [
+                    'employee_code' => $row['employee_code'],
+                    'Principal_amount' => $row['principal'],
+                    'monthly_repayment_amount' => $row['monthly_repayment'],
+                ];
+
+            }
         }, $data);
+
+        $processedData = array_filter($processedData, function ($row) {
+            if (!empty($row)) {
+                return $row;
+            }
+        });
         // Remove the first row (headers)
         // $headers = array_shift($processedData);
         // Output the processed data
         return json_encode($processedData, JSON_PRETTY_PRINT);
     }
+    catch(Exception $exception){
+        $data =  [
+            'employee_code' => null,
+            'Principal_amount' => null,
+            'monthly_repayment_amount' =>null,
+        ];
+    }
+    return json_encode($data,JSON_PRETTY_PRINT);
+    }
+
 
     //this function checks if there is a duplicates in the excel sheet data
     public static function CheckDuplicates($employeeCodeArray, $employeeObject)
